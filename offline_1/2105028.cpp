@@ -105,6 +105,7 @@ struct ComparePriority
 
 unordered_set<string> visited_configurations;
 priority_queue<search_node *, vector<search_node *>, ComparePriority> pq;
+vector<search_node *> all_allocated_nodes;
 
 bool solvable(search_node &node, int size = 3)
 {
@@ -168,6 +169,7 @@ void generate_children(search_node &node)
         {
             pq.push(child);
             explored_node++;
+            all_allocated_nodes.push_back(child);
             visited_configurations.insert(board_string);
         }
     }
@@ -186,6 +188,7 @@ void generate_children(search_node &node)
         {
             pq.push(child);
             explored_node++;
+            all_allocated_nodes.push_back(child);
             visited_configurations.insert(board_string);
         }
     }
@@ -204,6 +207,7 @@ void generate_children(search_node &node)
         {
             pq.push(child);
             explored_node++;
+            all_allocated_nodes.push_back(child);
             visited_configurations.insert(board_string);
         }
     }
@@ -222,6 +226,7 @@ void generate_children(search_node &node)
         {
             pq.push(child);
             explored_node++;
+            all_allocated_nodes.push_back(child);
             visited_configurations.insert(board_string);
         }
     }
@@ -275,6 +280,7 @@ search_node *puzzle_solver(const string &correct_configuration)
         if (temp->get_board_string() == correct_configuration)
         {
             cout << "solved\n";
+            cout << "solved\n";
             return temp;
         }
         generate_children(*temp);
@@ -287,24 +293,27 @@ int main(int argc, char *argv[])
 {
     int n;
     cin >> n;
-    search_node node(n, hamming_distance);
-    cout << node.size << endl;
+    search_node *node = new search_node(n, hamming_distance);
+    cout << node->size << endl;
 
-    node.g_n = 0;
-    node.h_n = hamming_distance(node);
-    node.priority_value = node.g_n + node.h_n;
-    bool solvable_flag = solvable(node, n);
+    node->g_n = 0;
+    node->h_n = hamming_distance(*node);
+    node->priority_value = node->g_n + node->h_n;
+    bool solvable_flag = solvable(*node, n);
 
     if (!solvable_flag)
     {
         cout << "not solvable" << endl;
+        delete node;
         return 0;
     }
 
-    pq.push(&node);
+    pq.push(node);
+    all_allocated_nodes.push_back(node);
+
     explored_node++;
 
-    visited_configurations.insert(node.get_board_string());
+    visited_configurations.insert(node->get_board_string());
 
     string correct_configuration = "";
 
@@ -316,8 +325,6 @@ int main(int argc, char *argv[])
             correct_configuration += to_string(reference_value) + ",";
         }
     }
-    cout << correct_configuration << endl;
-    cout << node.get_board_string() << endl;
 
     search_node *correct_config = puzzle_solver(correct_configuration);
 
@@ -337,5 +344,11 @@ int main(int argc, char *argv[])
     }
     cout << "explored node: " << explored_node << endl;
     cout << "expanded node: " << expanded_node << endl;
+    while (!all_allocated_nodes.empty())
+    {
+        search_node *temp = all_allocated_nodes.back();
+        all_allocated_nodes.pop_back();
+        delete temp;
+    }
     return 0;
 }
