@@ -2,99 +2,240 @@
 #include <queue>
 #include <vector>
 #include <unordered_set>
+#include <stack>
 using namespace std;
 
 #define SIZE 3
 
-string correct_configuration = "1,2,3,4,5,6,7,8,0,";
+int explored_node = 0;
+int expanded_node = 0;
 
 class search_node
 {
 public:
-    int current_board_configuration[SIZE][SIZE];
+    int size;
+    vector<vector<int>> current_board_configuration = vector<vector<int>>(SIZE, vector<int>(SIZE));
     int priority_value;
     search_node *parent_node;
     pair<int, int> empty_tile_position;
+    int (*heuristic_function)(const search_node &);
+    int g_n = 0;
+    int h_n = 0;
 
 public:
-    search_node()
+    search_node(int size_,
+                int (*h_fn)(const search_node &) = nullptr)
+        : size(size_),
+          current_board_configuration(size_, vector<int>(size_)),
+          priority_value(0),
+          parent_node(nullptr),
+          heuristic_function(h_fn),
+          g_n(0),
+          h_n(0)
     {
-        for (int i = 0; i < SIZE; i++)
+        for (int i = 0; i < size; i++)
         {
-            for (int j = 0; j < SIZE; j++)
+            for (int j = 0; j < size; j++)
             {
-                int value;
-                cin >> value;
-                if (value == 0)
-                {
-                    empty_tile_position.first = i;
-                    empty_tile_position.second = j;
-                }
-                current_board_configuration[i][j] = value;
+                int input;
+                cin >> input;
+                current_board_configuration[i][j] = input;
+                if (input == 0)
+                    empty_tile_position = {i, j};
             }
         }
-        priority_value = 0;
-        parent_node = nullptr;
+        h_n = heuristic_function
+                  ? heuristic_function(*this)
+                  : 0;
+        priority_value = g_n + h_n;
     }
     search_node(const search_node &node)
+        : size(node.size),
+          current_board_configuration(node.current_board_configuration),
+          priority_value(node.priority_value),
+          parent_node(node.parent_node),
+          empty_tile_position(node.empty_tile_position),
+          heuristic_function(node.heuristic_function),
+          g_n(node.g_n),
+          h_n(node.h_n)
     {
-        for (int i = 0; i < SIZE; i++)
-        {
-            for (int j = 0; j < SIZE; j++)
-            {
-                current_board_configuration[i][j] = node.current_board_configuration[i][j];
-            }
-        }
-        empty_tile_position = node.empty_tile_position;
-        priority_value = node.priority_value;
-        parent_node = node.parent_node;
     }
     void print_current_configuration()
     {
-        for (int i = 0; i < SIZE; i++)
+        for (int i = 0; i < size; i++)
         {
-            for (int j = 0; j < SIZE; j++)
+            for (int j = 0; j < size; j++)
             {
                 cout << current_board_configuration[i][j] << " ";
             }
             cout << endl;
         }
     }
+    string get_board_string()
+    {
+        string config = "";
+        for (int i = 0; i < size; i++)
+        {
+            for (int j = 0; j < size; j++)
+            {
+                config += to_string(current_board_configuration[i][j]) + ",";
+            }
+        }
+        return config;
+    }
+
+    void set_heuristic_function(int (*heuristic_function)(const search_node &))
+    {
+        this->heuristic_function = heuristic_function;
+    }
 };
 
 struct ComparePriority
 {
-    bool operator()(search_node *const &node_1, search_node *const &node_2) const
+    bool operator()(search_node *const &n1,
+                    search_node *const &n2) const
     {
-        return node_1->priority_value > node_2->priority_value;
+        if (n1->priority_value == n2->priority_value)
+        {
+            return n1->h_n > n2->h_n;
+        }
+        return n1->priority_value > n2->priority_value;
     }
 };
 
-priority_queue<search_node *, vector<search_node *>, ComparePriority> pq;
 unordered_set<string> visited_configurations;
+priority_queue<search_node *, vector<search_node *>, ComparePriority> pq;
 
-string get_board_string(const search_node &node)
+bool solvable(search_node &node, int size = 3)
 {
-    string config = "";
-    for (int i = 0; i < SIZE; i++)
+    vector<int> config;
+    int inversions = 0;
+
+    for (int i = 0; i < size; i++)
     {
-        for (int j = 0; j < SIZE; j++)
+        for (int j = 0; j < size; j++)
         {
-            config += to_string(node.current_board_configuration[i][j]) + ",";
+            int val = node.current_board_configuration[i][j];
+            if (val != 0)
+                config.push_back(val);
         }
     }
-    return config;
+
+    for (int i = 0; i < config.size() - 1; i++)
+    {
+        for (int j = i + 1; j < config.size(); j++)
+        {
+            if (config[i] > config[j])
+                inversions++;
+        }
+    }
+
+    cout << "inversions: " << inversions << endl;
+
+    // Solvability condition
+    if (size % 2 != 0)
+        return inversions % 2 == 0;
+    else
+    {
+        int row_from_bottom = size - node.empty_tile_position.first - 1; // size = 4, row = 3, del = 0
+        if (row_from_bottom % 2 == 0)                                    // empty tile is on an even row from the bottom
+        {
+            return inversions % 2 != 0;
+        }
+        else // empty tile is on an odd row from the bottom
+        {
+            return inversions % 2 == 0;
+        }
+    }
+}
+
+void generate_children(search_node &node)
+{
+    int row = node.empty_tile_position.first;
+    int col = node.empty_tile_position.second;
+    // move up
+    if (row > 0)
+    {
+        search_node *child = new search_node(node);
+        child->parent_node = &node;
+        swap(child->current_board_configuration[row][col], child->current_board_configuration[row - 1][col]);
+        child->empty_tile_position = {row - 1, col};
+        child->g_n = node.g_n + 1;
+        child->h_n = child->heuristic_function(*child);
+        child->priority_value = child->g_n + child->h_n;
+        string board_string = child->get_board_string();
+        if (visited_configurations.find(board_string) == visited_configurations.end())
+        {
+            pq.push(child);
+            explored_node++;
+            visited_configurations.insert(board_string);
+        }
+    }
+    // move down
+    if (row < node.size - 1)
+    {
+        search_node *child = new search_node(node);
+        swap(child->current_board_configuration[row][col], child->current_board_configuration[row + 1][col]);
+        child->parent_node = &node;
+        child->empty_tile_position = make_pair(row + 1, col);
+        child->g_n = node.g_n + 1;
+        child->h_n = child->heuristic_function(*child);
+        child->priority_value = child->g_n + child->h_n;
+        string board_string = child->get_board_string();
+        if (visited_configurations.find(board_string) == visited_configurations.end())
+        {
+            pq.push(child);
+            explored_node++;
+            visited_configurations.insert(board_string);
+        }
+    }
+    // move left
+    if (col > 0)
+    {
+        search_node *child = new search_node(node);
+        child->parent_node = &node;
+        swap(child->current_board_configuration[row][col], child->current_board_configuration[row][col - 1]);
+        child->empty_tile_position = make_pair(row, col - 1);
+        child->g_n = node.g_n + 1;
+        child->h_n = child->heuristic_function(*child);
+        child->priority_value = child->g_n + child->h_n;
+        string board_string = child->get_board_string();
+        if (visited_configurations.find(board_string) == visited_configurations.end())
+        {
+            pq.push(child);
+            explored_node++;
+            visited_configurations.insert(board_string);
+        }
+    }
+    // move right
+    if (col < node.size - 1)
+    {
+        search_node *child = new search_node(node);
+        child->parent_node = &node;
+        swap(child->current_board_configuration[row][col], child->current_board_configuration[row][col + 1]);
+        child->empty_tile_position = make_pair(row, col + 1);
+        child->g_n = node.g_n + 1;
+        child->h_n = child->heuristic_function(*child);
+        child->priority_value = child->g_n + child->h_n;
+        string board_string = child->get_board_string();
+        if (visited_configurations.find(board_string) == visited_configurations.end())
+        {
+            pq.push(child);
+            explored_node++;
+            visited_configurations.insert(board_string);
+        }
+    }
 }
 
 int hamming_distance(const search_node &node)
 {
     int distance = 0;
-    for (int i = 0; i < SIZE; i++)
+    for (int i = 0; i < node.size; i++)
     {
-        for (int j = 0; j < SIZE; j++)
+        for (int j = 0; j < node.size; j++)
         {
-            int reference_value = (i * SIZE + j + 1) % (SIZE * SIZE);
-            if (node.current_board_configuration[i][j] != reference_value)
+            int expected_value = (i * node.size + j + 1) % (node.size * node.size);
+            if (node.current_board_configuration[i][j] != expected_value)
             {
                 distance++;
             }
@@ -124,104 +265,77 @@ int linear_conflict(const search_node &node)
     return conflict;
 }
 
-void generate_children(search_node &node, int (*heuristic_function)(const search_node &), int g_n)
+search_node *puzzle_solver(const string &correct_configuration)
 {
-    int row = node.empty_tile_position.first;
-    int col = node.empty_tile_position.second;
-
-    // Move Up
-    if (row > 0)
+    while (!pq.empty())
     {
-        search_node *child = new search_node(node);
-        swap(child->current_board_configuration[row][col], child->current_board_configuration[row - 1][col]);
-        child->empty_tile_position = {row - 1, col};
-        child->priority_value = heuristic_function(*child) + g_n + 1;
-        child->parent_node = &node;
-        string board_string = get_board_string(*child);
-        if (visited_configurations.find(board_string) == visited_configurations.end())
+        search_node *temp = pq.top();
+        pq.pop();
+        expanded_node++;
+        if (temp->get_board_string() == correct_configuration)
         {
-            pq.push(child);
-            visited_configurations.insert(board_string);
+            cout << "solved\n";
+            return temp;
         }
+        generate_children(*temp);
     }
-
-    // Move Down
-    if (row < SIZE - 1)
-    {
-        search_node *child = new search_node(node);
-        swap(child->current_board_configuration[row][col], child->current_board_configuration[row + 1][col]);
-        child->empty_tile_position = {row + 1, col};
-        child->priority_value = heuristic_function(*child) + g_n + 1;
-        child->parent_node = &node;
-        string board_string = get_board_string(*child);
-        if (visited_configurations.find(board_string) == visited_configurations.end())
-        {
-            pq.push(child);
-            visited_configurations.insert(board_string);
-        }
-    }
-
-    // Move Left
-    if (col > 0)
-    {
-        search_node *child = new search_node(node);
-        swap(child->current_board_configuration[row][col], child->current_board_configuration[row][col - 1]);
-        child->empty_tile_position = {row, col - 1};
-        child->priority_value = heuristic_function(*child) + g_n + 1;
-        child->parent_node = &node;
-        string board_string = get_board_string(*child);
-        if (visited_configurations.find(board_string) == visited_configurations.end())
-        {
-            pq.push(child);
-            visited_configurations.insert(board_string);
-        }
-    }
-
-    // Move Right
-    if (col < SIZE - 1)
-    {
-        search_node *child = new search_node(node);
-        swap(child->current_board_configuration[row][col], child->current_board_configuration[row][col + 1]);
-        child->empty_tile_position = {row, col + 1};
-        child->priority_value = heuristic_function(*child) + g_n + 1;
-        child->parent_node = &node;
-        string board_string = get_board_string(*child);
-        if (visited_configurations.find(board_string) == visited_configurations.end())
-        {
-            pq.push(child);
-            visited_configurations.insert(board_string);
-        }
-    }
-}
-
-void puzze_solver(search_node &node, int (*heuristic_function)(const search_node &), int g_n)
-{
-    if (pq.empty())
-    {
-        cout << "no solution" << endl;
-        return;
-    }
-    node = *pq.top();
-    pq.pop();
-    node.print_current_configuration();
-    cout << "\n"
-         << "------------------\n";
-    if (get_board_string(node) == correct_configuration)
-    {
-        cout << "solved" << endl;
-        return;
-    }
-    generate_children(node, heuristic_function, g_n + 1);
-    puzze_solver(node, heuristic_function, g_n + 1);
+    cout << "no solution\n";
+    return nullptr;
 }
 
 int main(int argc, char *argv[])
 {
-    search_node node;
-    node.priority_value = hamming_distance(node) + 0;
-    pq.push(&node);
-    visited_configurations.insert(get_board_string(node));
-    puzze_solver(node, hamming_distance, 0);
+    int n;
+    cin >> n;
+    search_node node(n, hamming_distance);
+    cout << node.size << endl;
 
+    node.g_n = 0;
+    node.h_n = hamming_distance(node);
+    node.priority_value = node.g_n + node.h_n;
+    bool solvable_flag = solvable(node, n);
+
+    if (!solvable_flag)
+    {
+        cout << "not solvable" << endl;
+        return 0;
+    }
+
+    pq.push(&node);
+    explored_node++;
+
+    visited_configurations.insert(node.get_board_string());
+
+    string correct_configuration = "";
+
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            int reference_value = (i * n + j + 1) % (n * n);
+            correct_configuration += to_string(reference_value) + ",";
+        }
+    }
+    cout << correct_configuration << endl;
+    cout << node.get_board_string() << endl;
+
+    search_node *correct_config = puzzle_solver(correct_configuration);
+
+    stack<search_node *> path;
+    while (correct_config != nullptr)
+    {
+        path.push(correct_config);
+        correct_config = correct_config->parent_node;
+    }
+
+    while (!path.empty())
+    {
+        search_node *step = path.top();
+        path.pop();
+        step->print_current_configuration();
+        cout << "----------------" << endl;
+    }
+    cout << "explored node: " << explored_node << endl;
+    cout << "expanded node: " << expanded_node << endl;
     return 0;
 }
