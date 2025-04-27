@@ -103,8 +103,8 @@ struct ComparePriority
     }
 };
 
-unordered_set<string> visited_configurations;
-priority_queue<search_node *, vector<search_node *>, ComparePriority> pq;
+unordered_set<string> closed_list;
+priority_queue<search_node *, vector<search_node *>, ComparePriority> open_list;
 vector<search_node *> all_allocated_nodes;
 
 bool solvable(search_node &node, int size = 3)
@@ -138,7 +138,7 @@ bool solvable(search_node &node, int size = 3)
         return inversions % 2 == 0;
     else
     {
-        int row_from_bottom = size - node.empty_tile_position.first - 1; // size = 4, row = 3, del = 0
+        int row_from_bottom = size - node.empty_tile_position.first ; 
         if (row_from_bottom % 2 == 0)                                    // empty tile is on an even row from the bottom
         {
             return inversions % 2 != 0;
@@ -165,12 +165,12 @@ void generate_children(search_node &node)
         child->h_n = child->heuristic_function(*child);
         child->priority_value = child->g_n + child->h_n;
         string board_string = child->get_board_string();
-        if (visited_configurations.find(board_string) == visited_configurations.end())
+        if (closed_list.find(board_string) == closed_list.end())
         {
-            pq.push(child);
+            open_list.push(child);
             explored_node++;
             all_allocated_nodes.push_back(child);
-            visited_configurations.insert(board_string);
+            closed_list.insert(board_string);
         }
     }
     // move down
@@ -184,12 +184,12 @@ void generate_children(search_node &node)
         child->h_n = child->heuristic_function(*child);
         child->priority_value = child->g_n + child->h_n;
         string board_string = child->get_board_string();
-        if (visited_configurations.find(board_string) == visited_configurations.end())
+        if (closed_list.find(board_string) == closed_list.end())
         {
-            pq.push(child);
+            open_list.push(child);
             explored_node++;
             all_allocated_nodes.push_back(child);
-            visited_configurations.insert(board_string);
+            closed_list.insert(board_string);
         }
     }
     // move left
@@ -203,12 +203,12 @@ void generate_children(search_node &node)
         child->h_n = child->heuristic_function(*child);
         child->priority_value = child->g_n + child->h_n;
         string board_string = child->get_board_string();
-        if (visited_configurations.find(board_string) == visited_configurations.end())
+        if (closed_list.find(board_string) == closed_list.end())
         {
-            pq.push(child);
+            open_list.push(child);
             explored_node++;
             all_allocated_nodes.push_back(child);
-            visited_configurations.insert(board_string);
+            closed_list.insert(board_string);
         }
     }
     // move right
@@ -222,12 +222,12 @@ void generate_children(search_node &node)
         child->h_n = child->heuristic_function(*child);
         child->priority_value = child->g_n + child->h_n;
         string board_string = child->get_board_string();
-        if (visited_configurations.find(board_string) == visited_configurations.end())
+        if (closed_list.find(board_string) == closed_list.end())
         {
-            pq.push(child);
+            open_list.push(child);
             explored_node++;
             all_allocated_nodes.push_back(child);
-            visited_configurations.insert(board_string);
+            closed_list.insert(board_string);
         }
     }
 }
@@ -272,18 +272,18 @@ int linear_conflict(const search_node &node)
 
 search_node *puzzle_solver(const string &correct_configuration)
 {
-    while (!pq.empty())
+    while (!open_list.empty())
     {
-        search_node *temp = pq.top();
-        pq.pop();
+        search_node *promising_node = open_list.top();
+        open_list.pop();
         expanded_node++;
-        if (temp->get_board_string() == correct_configuration)
+        if (promising_node->get_board_string() == correct_configuration)
         {
             cout << "solved\n";
             cout << "solved\n";
-            return temp;
+            return promising_node;
         }
-        generate_children(*temp);
+        generate_children(*promising_node);
     }
     cout << "no solution\n";
     return nullptr;
@@ -308,12 +308,12 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    pq.push(node);
+    open_list.push(node);
     all_allocated_nodes.push_back(node);
 
     explored_node++;
 
-    visited_configurations.insert(node->get_board_string());
+    closed_list.insert(node->get_board_string());
 
     string correct_configuration = "";
 
