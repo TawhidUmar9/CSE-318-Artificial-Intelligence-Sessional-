@@ -3,6 +3,7 @@
 #include <vector>
 #include <unordered_set>
 #include <stack>
+#include <cmath>
 using namespace std;
 
 #define SIZE 3
@@ -15,16 +16,16 @@ class search_node
 public:
     int size;
     vector<vector<int>> current_board_configuration = vector<vector<int>>(SIZE, vector<int>(SIZE));
-    int priority_value;
+    double priority_value;
     search_node *parent_node;
     pair<int, int> empty_tile_position;
-    int (*heuristic_function)(const search_node &);
-    int g_n = 0;
-    int h_n = 0;
+    double (*heuristic_function)(const search_node &);
+    double g_n = 0;
+    double h_n = 0;
 
 public:
     search_node(int size_,
-                int (*h_fn)(const search_node &) = nullptr)
+                double (*h_fn)(const search_node &) = nullptr)
         : size(size_),
           current_board_configuration(size_, vector<int>(size_)),
           priority_value(0),
@@ -84,7 +85,7 @@ public:
         return config;
     }
 
-    void set_heuristic_function(int (*heuristic_function)(const search_node &))
+    void set_heuristic_function(double (*heuristic_function)(const search_node &))
     {
         this->heuristic_function = heuristic_function;
     }
@@ -138,8 +139,8 @@ bool solvable(search_node &node, int size = 3)
         return inversions % 2 == 0;
     else
     {
-        int row_from_bottom = size - node.empty_tile_position.first ; 
-        if (row_from_bottom % 2 == 0)                                    // empty tile is on an even row from the bottom
+        int row_from_bottom = size - node.empty_tile_position.first;
+        if (row_from_bottom % 2 == 0) // empty tile is on an even row from the bottom
         {
             return inversions % 2 != 0;
         }
@@ -232,9 +233,9 @@ void generate_children(search_node &node)
     }
 }
 
-int hamming_distance(const search_node &node)
+double hamming_distance(const search_node &node)
 {
-    int distance = 0;
+    double distance = 0;
     for (int i = 0; i < node.size; i++)
     {
         for (int j = 0; j < node.size; j++)
@@ -249,25 +250,110 @@ int hamming_distance(const search_node &node)
     return distance;
 }
 
-int manhattan_distane(const search_node &node)
+double manhattan_distane(const search_node &node)
 {
-    int distance = 0;
+    double distance = 0;
+    for (int i = 0; i < node.size; i++)
+    {
+        for (int j = 0; j < node.size; j++)
+        {
+            int value = node.current_board_configuration[i][j];
+            if (value != 0)
+            {
+                int expected_row = (value - 1) / node.size;
+                int expected_col = (value - 1) % node.size;
+                distance += abs(expected_row - i) + abs(expected_col - j);
+            }
+        }
+    }
 
     return distance;
 }
 
-int euclidean_distance(const search_node &node)
+double euclidean_distance(const search_node &node)
 {
-    int distance = 0;
+    double distance = 0;
+    for (int i = 0; i < node.size; i++)
+    {
+        for (int j = 0; j < node.size; j++)
+        {
+            int value = node.current_board_configuration[i][j];
+            if (value != 0)
+            {
+                int expected_row = (value - 1) / node.size;
+                int expected_col = (value - 1) % node.size;
+                distance += sqrt(pow(expected_row - i, 2) + pow(expected_col - j, 2));
+            }
+        }
+    }
 
     return distance;
 }
 
-int linear_conflict(const search_node &node)
+double linear_conflict(const search_node &node)
 {
-    int conflict = 0;
+    int size = node.size;
+    const auto &grid = node.current_board_configuration;
+    int conflicts = 0;
 
-    return conflict;
+    for (int i = 0; i < size; ++i)
+    {
+        for (int j = 0; j < size; ++j)
+        {
+            int value1 = grid[i][j];
+            if (value1 == 0)
+                continue;
+            int correct_row_value1 = (value1 - 1) / size;
+            int correct_col_value2 = (value1 - 1) % size;
+            if (correct_row_value1 != i)
+                continue; // Row te belong na korle conitnue
+
+            for (int k = j + 1; k < size; ++k)
+            {
+                int value2 = grid[i][k];
+
+                if (value2 == 0)
+                    continue;
+                int correct_row_value2 = (value2 - 1) / size;
+                int correct_col_value1 = (value2 - 1) % size;
+                if (correct_col_value2 != i) // Correct row te belong kortese na
+                    continue;
+                if (correct_col_value1 > correct_col_value2) // Order is wrong
+                    conflicts++;
+            }
+        }
+    }
+
+    // Column conflicts
+    for (int j = 0; j < size; ++j)
+    {
+        for (int i = 0; i < size; ++i)
+        {
+            int value1 = grid[i][j];
+            if (value1 == 0)
+                continue;
+            int correct_row_value1 = (value1 - 1) / size;
+            int correct_col_value1 = (value1 - 1) % size;
+            if (correct_col_value1 != j)
+                continue; // correct column e belong kortese na
+
+            for (int k = i + 1; k < size; ++k)
+            {
+                int value2 = grid[k][j];
+                if (value2 == 0)
+                    continue;
+                int correct_row_value2 = (value2 - 1) / size;
+                int correct_col_value2 = (value2 - 1) % size;
+                if (correct_col_value2 != j) // correct column e belong kortese na
+                    continue;
+
+                if (correct_row_value1 > correct_row_value2)
+                    conflicts++;
+            }
+        }
+    }
+    double total_distance = manhattan_distane(node) + 2 * conflicts;
+    return total_distance;
 }
 
 search_node *puzzle_solver(const string &correct_configuration)
@@ -279,7 +365,6 @@ search_node *puzzle_solver(const string &correct_configuration)
         expanded_node++;
         if (promising_node->get_board_string() == correct_configuration)
         {
-            cout << "solved\n";
             cout << "solved\n";
             return promising_node;
         }
@@ -293,11 +378,37 @@ int main(int argc, char *argv[])
 {
     int n;
     cin >> n;
+    int heuristic_choice;
     search_node *node = new search_node(n, hamming_distance);
-    cout << node->size << endl;
+    if (argc < 2)
+    {
+        cout << "Missing arguement" << endl;
+        return 0;
+    }
+    switch (argv[1][0])
+    {
+    case '1':
+        node->set_heuristic_function(hamming_distance);
+        cout << "Heuristic function: Hamming distance" << endl;
+        break;
+    case '2':
+        node->set_heuristic_function(manhattan_distane);
+        cout << "Heuristic function: Manhattan distance" << endl;
+        break;
+    case '3':
+        node->set_heuristic_function(euclidean_distance);
+        cout << "Heuristic function: Euclidean distance" << endl;
+        break;
+    case '4':
+        node->set_heuristic_function(linear_conflict);
+        cout << "Heuristic function: Linear conflict" << endl;
+        break;
+    default:
+        break;
+    }
 
     node->g_n = 0;
-    node->h_n = hamming_distance(*node);
+    node->h_n = node->heuristic_function(*node);
     node->priority_value = node->g_n + node->h_n;
     bool solvable_flag = solvable(*node, n);
 
@@ -329,26 +440,32 @@ int main(int argc, char *argv[])
     search_node *correct_config = puzzle_solver(correct_configuration);
 
     stack<search_node *> path;
+    int path_length = 0;
     while (correct_config != nullptr)
     {
         path.push(correct_config);
+        path_length++;
         correct_config = correct_config->parent_node;
     }
 
+    cout << "Minimum number of moves = " << --path_length << endl;
     while (!path.empty())
     {
         search_node *step = path.top();
         path.pop();
         step->print_current_configuration();
-        cout << "----------------" << endl;
+        cout << endl;
     }
-    cout << "explored node: " << explored_node << endl;
-    cout << "expanded node: " << expanded_node << endl;
+    cout << "Explored node: " << explored_node << endl;
+    cout << "Expanded node: " << expanded_node << endl;
     while (!all_allocated_nodes.empty())
     {
         search_node *temp = all_allocated_nodes.back();
         all_allocated_nodes.pop_back();
         delete temp;
     }
+    closed_list.clear();
+
+
     return 0;
 }
