@@ -172,6 +172,8 @@ void generate_children(search_node &node)
             explored_node++;
             all_allocated_nodes.push_back(child);
             closed_list.insert(board_string);
+        }else{
+            delete child; 
         }
     }
     // move down
@@ -191,6 +193,8 @@ void generate_children(search_node &node)
             explored_node++;
             all_allocated_nodes.push_back(child);
             closed_list.insert(board_string);
+        }else{
+            delete child;
         }
     }
     // move left
@@ -210,6 +214,8 @@ void generate_children(search_node &node)
             explored_node++;
             all_allocated_nodes.push_back(child);
             closed_list.insert(board_string);
+        }else{
+            delete child; 
         }
     }
     // move right
@@ -229,6 +235,8 @@ void generate_children(search_node &node)
             explored_node++;
             all_allocated_nodes.push_back(child);
             closed_list.insert(board_string);
+        }else{
+            delete child; // Avoid memory leak if the node is already in closed_list
         }
     }
 }
