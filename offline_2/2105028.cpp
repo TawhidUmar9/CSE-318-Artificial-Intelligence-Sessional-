@@ -38,20 +38,20 @@ unordered_map<string, int> best_value = {
     {"G49", 6000},
     {"G50", 5988}};
 
-long long get_cut_weight(unordered_set<int> &X, unordered_set<int> &Y, const vector<vector<int>> &edges)
+long long get_cut_weight(unordered_set<int> &X, unordered_set<int> &Y, const vector<vector<int>> &adj_matrix)
 {
     long long cut_weight = 0;
     for (auto x : X)
     {
         for (auto y : Y)
         {
-            cut_weight += edges[x][y];
+            cut_weight += adj_matrix[x][y];
         }
     }
     return cut_weight;
 }
 
-double randomized_max_cut(const unordered_set<int> &vertices, const vector<vector<int>> &edges, int n)
+double randomized_max_cut(const unordered_set<int> &vertices, const vector<vector<int>> &adj_matrix, int n)
 {
     double total_weight = 0.0;
     for (int i = 0; i < n; i++)
@@ -64,13 +64,13 @@ double randomized_max_cut(const unordered_set<int> &vertices, const vector<vecto
             else
                 Y.insert(e);
         }
-        double cut_weight = get_cut_weight(X, Y, edges);
+        double cut_weight = get_cut_weight(X, Y, adj_matrix);
         total_weight += cut_weight;
     }
     return (total_weight / n);
 }
 
-pair<unordered_set<int>, unordered_set<int>> greedy_max_cut(const unordered_set<int> &vertices, const vector<vector<int>> &edges, const pair<int, int> &heaviest_edge)
+pair<unordered_set<int>, unordered_set<int>> greedy_max_cut(const unordered_set<int> &vertices, const vector<vector<int>> &adj_matrix, const pair<int, int> &heaviest_edge)
 
 {
     int u = -1, v = -1;
@@ -94,9 +94,9 @@ pair<unordered_set<int>, unordered_set<int>> greedy_max_cut(const unordered_set<
     {
         long long w_x = 0, w_y = 0;
         for (int y : Y)
-            w_x += edges[z][y];
+            w_x += adj_matrix[z][y];
         for (int x : X)
-            w_y += edges[z][x];
+            w_y += adj_matrix[z][x];
 
         if (w_x > w_y)
         {
@@ -111,118 +111,184 @@ pair<unordered_set<int>, unordered_set<int>> greedy_max_cut(const unordered_set<
     return {X, Y};
 }
 
-pair<unordered_set<int>, unordered_set<int>> semi_greedy_max_cut(const unordered_set<int> &vertices,
-                                                                 const vector<vector<int>> &edges, double alpha, const pair<int, int> &heaviest_edge)
+pair<unordered_set<int>, unordered_set<int>> semi_greedy_max_cut(const unordered_set<int> &vertices, const vector<vector<int>> &adj_matrix, double alpha, const pair<int, int> &heaviest_edge)
 {
+    // Initialize random number generator
     srand(time(0));
-
-    // 1) find the heaviest edge
-    int u = -1, v = -1;
-    u = heaviest_edge.first;
-    v = heaviest_edge.second;
-
+    // Initialize with heaviest edge
+    int u = heaviest_edge.first, v = heaviest_edge.second;
     unordered_set<int> X{u}, Y{v};
-    // 2) build list of unassigned vertices
+
+    // Build V'
     unordered_set<int> v_prime;
     for (int z : vertices)
-    {
         if (z != u && z != v)
             v_prime.insert(z);
+
+    // Precompute sigma_x, sigma_y
+    unordered_map<int, long long> sigma_x, sigma_y;
+    for (int z : v_prime)
+    {
+        sigma_x[z] = 0;
+        sigma_y[z] = 0;
+        if (z != u)
+            sigma_x[z] += adj_matrix[z][u];
+        if (z != v)
+            sigma_y[z] += adj_matrix[z][v];
     }
+
     while (!v_prime.empty())
     {
-        unordered_map<int, long long> sigma_x, sigma_y;
-
-        for (auto v : v_prime) // calculatin sigma_x and sigma_y
+        // Compute w_min, w_max over V'
+        long long w_min = std::numeric_limits<long long>::max();
+        long long w_max = std::numeric_limits<long long>::min();
+        for (int z : v_prime)
         {
-            sigma_x[v] = 0;
-            sigma_y[v] = 0;
-            for (auto x : X)
-            {
-                sigma_x[v] += edges[v][x];
-            }
-            for (auto y : Y)
-            {
-                sigma_y[v] += edges[v][y];
-            }
+            w_min = std::min(w_min, std::min(sigma_x[z], sigma_y[z]));
+            w_max = std::max(w_max, std::max(sigma_x[z], sigma_y[z]));
         }
-        // calculating w_min and w_max
 
-        long long w_min = numeric_limits<long long>::max();
-        long long w_max = numeric_limits<long long>::min();
+        // Compute threshold mu
+        double mu = static_cast<double>(w_min) + alpha * static_cast<double>(w_max - w_min);
 
-        for (auto v : v_prime)
-        {
-            w_min = min(min(sigma_y[v], sigma_x[v]), w_min);
-            w_max = max(max(sigma_y[v], sigma_x[v]), w_max);
-        }
-        double mu = (double)w_min + alpha * (double)(w_max - w_min);
-
-        // form the RCL
+        // Build RCL
         vector<int> RCL;
-        for (auto v : v_prime)
+        for (int z : v_prime)
         {
-            long long f_v = max(sigma_x[v], sigma_y[v]);
-            if ((double)f_v >= mu)
-            {
-                RCL.push_back(v);
-            }
+            long long f_v = std::max(sigma_x[z], sigma_y[z]);
+            if (static_cast<double>(f_v) >= mu)
+                RCL.push_back(z);
         }
 
+        // Handle empty RCL
         if (RCL.empty())
         {
+            // Assign remaining vertices to X (arbitrary choice)
+            for (int z : v_prime)
+                X.insert(z);
+            v_prime.clear();
             break;
         }
-        // randomly select a vertex from RCL
+
+        // Pick v_star randomly
         int index = rand() % RCL.size();
         int v_star = RCL[index];
-        if (sigma_x[v_star] > sigma_y[v_star])
-        {
+
+        // Add v_star to X or Y
+        bool add_to_Y = sigma_x[v_star] >= sigma_y[v_star];
+        if (add_to_Y)
             Y.insert(v_star);
-        }
         else
-        {
             X.insert(v_star);
-        }
         v_prime.erase(v_star);
+
+        // Update sigma_x, sigma_y
+        for (int z : v_prime)
+        {
+            int w = adj_matrix[z][v_star];
+            if (w == 0)
+                continue;
+            if (add_to_Y)
+                sigma_y[z] += w; // v_star in Y
+            else
+                sigma_x[z] += w; // v_star in X
+        }
     }
+
     return {X, Y};
 }
+// pair<unordered_set<int>, unordered_set<int>> local_search(const unordered_set<int> &S, const unordered_set<int> &S_bar, const vector<vector<int>> &edges, const unordered_set<int> &vertices)
+// {
+//     unordered_set<int> set_S(S), set_S_bar(S_bar);
+//     bool improved = true;
+//     while (improved)
+//     {
+//         improved = false;
+//         long long best_delta = 0;
+//         long long best_vertex = -1;
+//         long long delta = 0;
 
-pair<unordered_set<int>, unordered_set<int>> local_search(const unordered_set<int> &S, const unordered_set<int> &S_bar, const vector<vector<int>> &edges, const unordered_set<int> &vertices)
+//         for (auto v : vertices)
+//         {
+//             long long sigma_S = 0, sigma_S_bar = 0;
+//             bool in_S = set_S.count(v) > 0;
+
+//             for (auto u : set_S)
+//             {
+//                 if (u == v)
+//                     continue;
+//                 sigma_S += edges[u][v];
+//             }
+
+//             for (auto u : set_S_bar)
+//             {
+//                 if (u == v)
+//                     continue;
+//                 sigma_S_bar += edges[u][v];
+//             }
+
+//             if (in_S)
+//                 delta = sigma_S - sigma_S_bar;
+//             else
+//                 delta = sigma_S_bar - sigma_S;
+
+//             if (delta > best_delta)
+//             {
+//                 best_delta = delta;
+//                 best_vertex = v;
+//             }
+//         }
+
+//         if (best_delta > 0)
+//         {
+//             improved = true;
+//             if (set_S.count(best_vertex))
+//             {
+//                 set_S.erase(best_vertex);
+//                 set_S_bar.insert(best_vertex);
+//             }
+//             else
+//             {
+//                 set_S_bar.erase(best_vertex);
+//                 set_S.insert(best_vertex);
+//             }
+//         }
+//     }
+
+//     // Return the improved cut:
+//     return {set_S, set_S_bar};
+// }
+
+pair<unordered_set<int>, unordered_set<int>> local_search(const unordered_set<int> &S, const unordered_set<int> &S_bar, const vector<vector<int>> &adj_matrix, const unordered_set<int> &vertices)
 {
     unordered_set<int> set_S(S), set_S_bar(S_bar);
+    unordered_map<int, long long> sigma_in_S, sigma_in_S_bar;
+
+    for (int v : vertices)
+    {
+        sigma_in_S[v] = 0;
+        sigma_in_S_bar[v] = 0;
+        for (int u : set_S)
+            sigma_in_S[v] += adj_matrix[v][u];
+        for (int u : set_S_bar)
+            sigma_in_S_bar[v] += adj_matrix[v][u];
+    }
+
     bool improved = true;
     while (improved)
     {
         improved = false;
         long long best_delta = 0;
-        long long best_vertex = -1;
-        long long delta = 0;
+        int best_vertex = -1;
 
-        for (auto v : vertices)
+        for (int v : vertices)
         {
-            long long sigma_S = 0, sigma_S_bar = 0;
-            bool in_S = set_S.count(v) > 0;
-
-            for (auto u : set_S)
-            {
-                if (u == v)
-                    continue;
-                sigma_S += edges[u][v];
-            }
-
-            for (auto u : set_S_bar)
-            {
-                if (u == v)
-                    continue;
-                sigma_S_bar += edges[u][v];
-            }
-
+            long long delta;
+            bool in_S = set_S.count(v);
             if (in_S)
-                delta = sigma_S - sigma_S_bar;
+                delta = sigma_in_S[v] - sigma_in_S_bar[v];
             else
-                delta = sigma_S_bar - sigma_S;
+                delta = sigma_in_S_bar[v] - sigma_in_S[v];
 
             if (delta > best_delta)
             {
@@ -234,24 +300,37 @@ pair<unordered_set<int>, unordered_set<int>> local_search(const unordered_set<in
         if (best_delta > 0)
         {
             improved = true;
-            if (set_S.count(best_vertex))
+            bool in_S = set_S.count(best_vertex);
+
+            if (in_S)
             {
                 set_S.erase(best_vertex);
                 set_S_bar.insert(best_vertex);
+
+                for (int u : vertices)
+                {
+                    sigma_in_S[u] -= adj_matrix[u][best_vertex];
+                    sigma_in_S_bar[u] += adj_matrix[u][best_vertex];
+                }
             }
             else
             {
                 set_S_bar.erase(best_vertex);
                 set_S.insert(best_vertex);
+
+                for (int u : vertices)
+                {
+                    sigma_in_S[u] += adj_matrix[u][best_vertex];
+                    sigma_in_S_bar[u] -= adj_matrix[u][best_vertex];
+                }
             }
         }
     }
 
-    // Return the improved cut:
     return {set_S, set_S_bar};
 }
 
-pair<unordered_set<int>, unordered_set<int>> grasp(const unordered_set<int> &vertices, const vector<vector<int>> &edges, const pair<int, int> &heaviest_edge,
+pair<unordered_set<int>, unordered_set<int>> grasp(const unordered_set<int> &vertices, const vector<vector<int>> &adj_matrix, const pair<int, int> &heaviest_edge,
 
                                                    int maxIterations, double alpha = 0.5)
 {
@@ -261,18 +340,18 @@ pair<unordered_set<int>, unordered_set<int>> grasp(const unordered_set<int> &ver
     for (int i = 0; i < maxIterations; ++i)
     {
         // cout << "Iteration: " << i << endl;
-        auto partition = semi_greedy_max_cut(vertices, edges, alpha, heaviest_edge);
+        auto partition = semi_greedy_max_cut(vertices, adj_matrix, alpha, heaviest_edge);
         // cout << "Semi-Greedy Partition: " << endl;
         unordered_set<int> X = partition.first;
         unordered_set<int> Y = partition.second;
 
         // cout << "Local Search Partition: " << endl;
-        auto improvedPartition = local_search(X, Y, edges, vertices);
+        auto improvedPartition = local_search(X, Y, adj_matrix, vertices);
         X = improvedPartition.first;
         Y = improvedPartition.second;
 
         long long current_weight = 0;
-        current_weight = get_cut_weight(X, Y, edges);
+        current_weight = get_cut_weight(X, Y, adj_matrix);
 
         if (i == 0 || (current_weight > best_weight))
         {
@@ -306,7 +385,7 @@ void test(string file_name, ofstream &csv, int max_iterations, double alpha)
     file >> n >> m;
 
     // Initialize edges with size (n+1) x (n+1) for 1-based indexing
-    vector<vector<int>> edges(n + 1, vector<int>(n + 1, 0));
+    vector<vector<int>> adj_matrix(n + 1, vector<int>(n + 1, 0));
 
     // heaviest edge
     int heaviest_edge_u = -1, heaviest_edge_v = -1;
@@ -316,8 +395,8 @@ void test(string file_name, ofstream &csv, int max_iterations, double alpha)
     {
         int u, v, w;
         file >> u >> v >> w;
-        edges[u][v] = w;
-        edges[v][u] = w;
+        adj_matrix[u][v] = w;
+        adj_matrix[v][u] = w;
         // add the vertices to the set if not already present
         vertices.insert(u);
         vertices.insert(v);
@@ -335,34 +414,34 @@ void test(string file_name, ofstream &csv, int max_iterations, double alpha)
     // Run the algorithms
 
     auto start = chrono::high_resolution_clock::now();
-    double rand_cut = randomized_max_cut(vertices, edges, max_iterations);
+    double rand_cut = randomized_max_cut(vertices, adj_matrix, max_iterations);
     auto end = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(end - start);
     cout << "Randomized Max Cut: " << rand_cut << " (Time: " << duration.count() << " ms)" << endl;
 
     start = chrono::high_resolution_clock::now();
-    auto greedy_cut = greedy_max_cut(vertices, edges, heaviest_edge);
+    auto greedy_cut = greedy_max_cut(vertices, adj_matrix, heaviest_edge);
     end = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::milliseconds>(end - start);
-    cout << "Greedy Max Cut: " << get_cut_weight(greedy_cut.first, greedy_cut.second, edges) << " (Time: " << duration.count() << " ms)" << endl;
+    cout << "Greedy Max Cut: " << get_cut_weight(greedy_cut.first, greedy_cut.second, adj_matrix) << " (Time: " << duration.count() << " ms)" << endl;
 
     start = chrono::high_resolution_clock::now();
-    auto semi_greedy_cut = semi_greedy_max_cut(vertices, edges, alpha, heaviest_edge);
+    auto semi_greedy_cut = semi_greedy_max_cut(vertices, adj_matrix, alpha, heaviest_edge);
     end = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::milliseconds>(end - start);
-    cout << "Semi-Greedy Max Cut: " << get_cut_weight(semi_greedy_cut.first, semi_greedy_cut.second, edges) << " (Time: " << duration.count() << " ms)" << endl;
+    cout << "Semi-Greedy Max Cut: " << get_cut_weight(semi_greedy_cut.first, semi_greedy_cut.second, adj_matrix) << " (Time: " << duration.count() << " ms)" << endl;
 
     start = chrono::high_resolution_clock::now();
-    auto local_cut = local_search(semi_greedy_cut.first, semi_greedy_cut.second, edges, vertices);
+    auto local_cut = local_search(semi_greedy_cut.first, semi_greedy_cut.second, adj_matrix, vertices);
     end = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::milliseconds>(end - start);
-    cout << "Local Search Max Cut: " << get_cut_weight(local_cut.first, local_cut.second, edges) << " (Time: " << duration.count() << " ms)" << endl;
+    cout << "Local Search Max Cut: " << get_cut_weight(local_cut.first, local_cut.second, adj_matrix) << " (Time: " << duration.count() << " ms)" << endl;
 
     start = chrono::high_resolution_clock::now();
-    auto grasp_cut = grasp(vertices, edges, heaviest_edge, max_iterations, alpha);
+    auto grasp_cut = grasp(vertices, adj_matrix, heaviest_edge, max_iterations, alpha);
     end = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::milliseconds>(end - start);
-    cout << "GRASP Max Cut: " << get_cut_weight(grasp_cut.first, grasp_cut.second, edges) << " (Time: " << duration.count() << " ms)" << endl;
+    cout << "GRASP Max Cut: " << get_cut_weight(grasp_cut.first, grasp_cut.second, adj_matrix) << " (Time: " << duration.count() << " ms)" << endl;
     cout << "--------------------------------------------------------\n";
 
     // Write results to CSV
@@ -370,16 +449,16 @@ void test(string file_name, ofstream &csv, int max_iterations, double alpha)
         << n << ","
         << m << ","
         << rand_cut << ","
-        << get_cut_weight(greedy_cut.first, greedy_cut.second, edges) << ","
-        << get_cut_weight(semi_greedy_cut.first, semi_greedy_cut.second, edges) << ","
-        << get_cut_weight(local_cut.first, local_cut.second, edges) << ","
-        << get_cut_weight(grasp_cut.first, grasp_cut.second, edges) << ",";
+        << get_cut_weight(greedy_cut.first, greedy_cut.second, adj_matrix) << ","
+        << get_cut_weight(semi_greedy_cut.first, semi_greedy_cut.second, adj_matrix) << ","
+        << get_cut_weight(local_cut.first, local_cut.second, adj_matrix) << ","
+        << get_cut_weight(grasp_cut.first, grasp_cut.second, adj_matrix) << ",";
 
     auto it = best_value.find(name);
     if (it != best_value.end())
         csv << it->second << "\n";
     else
-        csv << "N/A\n";
+        csv << "0\n";
     csv.flush();
 }
 int main()
