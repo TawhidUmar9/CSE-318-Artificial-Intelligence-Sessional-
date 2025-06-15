@@ -1,30 +1,37 @@
-//some heuristic functions for the chain reaction problem
 #include "board.h"
+#include <iostream>
 
-int evaluate_heuristic(const Board& state, char maximizing_player_color) {
-    int player_orbs = 0;
-    int opponent_orbs = 0;
+int evaluate_heuristic(const Board &board, char player_color)
+{
+    std::cerr << "Heuristic: Evaluating for Player " << player_color << "\n";
+    int player_progress = 0;
+    int opponent_progress = 0;
+    char opponent_color = (player_color == 'R') ? 'B' : 'R';
 
-    // Convert char player color to enum OrbColor for comparison
-    OrbColor player_enum_color = (maximizing_player_color == 'R') ? RED : BLUE;
-    OrbColor opponent_enum_color = (maximizing_player_color == 'R') ? BLUE : RED;
-
-    // Iterate through all cells on the board
-    for (int r = 0; r < state.rows; ++r) {
-        for (int c = 0; c < state.cols; ++c) {
-            // Get the cell details from the state's grid
-            const Cell& cell = state.grid[r][c]; // Use const reference for efficiency
-
-            if (cell.color == player_enum_color) {
-                player_orbs += cell.count; // Add count of player's orbs
-            } else if (cell.color == opponent_enum_color) {
-                opponent_orbs += cell.count; // Add count of opponent's orbs
+    for (int r = 0; r < board.num_rows; ++r)
+    {
+        for (int c = 0; c < board.num_cols; ++c)
+        {
+            if (board.grid[r][c].color == board.char_to_orb_color(player_color))
+            {
+                int critical_mass = board.get_critical_mass(r, c);
+                if (critical_mass > 0)
+                {
+                    player_progress += static_cast<double>(board.grid[r][c].count) / critical_mass;
+                }
             }
-            // Empty cells don't contribute to orb counts for either player
+            else if (board.grid[r][c].color == board.char_to_orb_color(opponent_color))
+            {
+                int critical_mass = board.get_critical_mass(r, c);
+                if (critical_mass > 0)
+                {
+                    opponent_progress += static_cast<double>(board.grid[r][c].count) / critical_mass;
+                }
+            }
         }
     }
 
-    // Simple heuristic: difference between player's orbs and opponent's orbs.
-    // The maximizing player wants to maximize this difference.
-    return player_orbs - opponent_orbs;
+    int eval = player_progress - opponent_progress;
+    std::cerr << "Heuristic: Player " << player_color << ", Eval " << eval << "\n";
+    return eval;
 }

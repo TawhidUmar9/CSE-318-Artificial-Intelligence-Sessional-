@@ -6,8 +6,8 @@ const POLLING_INTERVAL_MS = 500;
 
 function App() {
   const [boardData, setBoardData] = useState([]);
-  const [gameStatus, setGameStatus] = useState('Loading game...');
-  const [winner, setWinner] = useState('');
+  const [gameStatus, setGameStatus] = useState('Waiting for AI to start...');
+  const [winner, setWinner] = useState('N');
   const [isProcessing, setIsProcessing] = useState(false);
 
   const fetchGameState = useCallback(async () => {
@@ -74,6 +74,35 @@ function App() {
     }
   };
 
+  const handleResetGame = async () => {
+    console.log('Resetting game');
+    setIsProcessing(true);
+    setGameStatus('Resetting game...');
+    try {
+      const response = await fetch(`${API_BASE_URL}/reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Reset error:', errorData);
+        throw new Error(`Reset failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
+      }
+      const data = await response.json();
+      console.log('Reset response:', data);
+      setBoardData(data.grid);
+      setWinner(data.winner);
+      setGameStatus(data.currentPlayer === 'R' ? "Your Turn (Red)" : "AI's Turn (Blue)");
+    } catch (error) {
+      console.error("Error resetting game:", error);
+      setGameStatus(`Error: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const getCellClasses = (cell) => {
     let classes = 'cell';
     if (cell.color === 'R') classes += ' cell-red';
@@ -105,11 +134,9 @@ function App() {
       ) : (
         <p>Board is loading or empty.</p>
       )}
-      {winner !== 'N' && (
-        <button onClick={() => window.location.reload()} className="play-again-button">
-          Play Again
-        </button>
-      )}
+      <button onClick={handleResetGame} className="reset-button">
+        Reset Game
+      </button>
     </div>
   );
 }
