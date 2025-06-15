@@ -1,15 +1,19 @@
+#ifndef BOARD_H
+#define BOARD_H
+
 #include <vector>
 #include <string>
 #include <utility>
 #include <queue>
 #include <stdexcept>
-
+#include <set>
 enum OrbColor
 {
     EMPTY,
     RED,
     BLUE
 };
+
 struct Cell
 {
     int count;
@@ -19,110 +23,147 @@ struct Cell
 class Board
 {
 public:
-    int num_rows;
-    int num_cols;
+    int rows;
+    int cols;
     std::vector<std::vector<Cell>> grid;
     char current_player_color;
     std::pair<int, int> last_move_coords;
-
-    Board(int r, int c) : num_rows(r), num_cols(c), last_move_coords({-1, -1})
+    std::set<char> active_players;
+    int total_moves_made;
+    Board(int rows, int cols) : rows(rows), cols(cols), last_move_coords({-1, -1}), total_moves_made(0)
     {
-        grid.resize(num_rows, std::vector<Cell>(num_cols, {0, EMPTY}));
+        grid.resize(rows, std::vector<Cell>(cols, {0, EMPTY}));
         current_player_color = 'R';
     }
+
     Board(const Board &other) = default;
 
-    int get_critical_mass(int r, int c) const
+    int get_critical_mass(int row, int col) const
     {
-        if ((r == 0 || r == num_rows - 1) && (c == 0 || c == num_cols - 1))
+        if ((row == 0 || row == rows - 1) && (col == 0 || col == cols - 1))
             return 2;
-        if (r == 0 || r == num_rows - 1 || c == 0 || c == num_cols - 1)
+        if (row == 0 || row == rows - 1 || col == 0 || col == cols - 1)
             return 3;
         return 4;
     }
-    bool is_valid_move(int r, int c, char player_char) const
+
+    bool is_valid_move(int row, int col, char player_char) const
     {
-        if (r < 0 || r >= num_rows || c < 0 || c >= num_cols)
+        if (row < 0 || row >= rows || col < 0 || col >= cols)
             return false;
         OrbColor p_color = char_to_orb_color(player_char);
-        return grid[r][c].color == EMPTY || grid[r][c].color == p_color;
+        return grid[row][col].color == EMPTY || grid[row][col].color == p_color;
     }
-    Board apply_move(int r, int c, char player_char) const
+
+    Board apply_move(int row, int col, char player_char) const
     {
         Board next_state = *this;
+        next_state.total_moves_made++;
         OrbColor p_color = char_to_orb_color(player_char);
-        if (next_state.grid[r][c].color == EMPTY)
-            next_state.grid[r][c].color = p_color;
-        next_state.grid[r][c].count++;
+
+        if (next_state.grid[row][col].color == EMPTY)
+            next_state.grid[row][col].color = p_color;
+        next_state.grid[row][col].count++;
 
         std::queue<std::pair<int, int>> explosion_queue;
-        explosion_queue.push({r, c});
+        if (next_state.grid[row][col].count >= next_state.get_critical_mass(row, col))
+        {
+            explosion_queue.push({row, col});
+        }
+
         int row_offsets[] = {-1, 1, 0, 0}, col_offsets[] = {0, 0, -1, 1};
 
         while (!explosion_queue.empty())
         {
             std::pair<int, int> current_cell = explosion_queue.front();
             explosion_queue.pop();
-            int current_r = current_cell.first, current_c = current_cell.second;
-            int critical_mass = next_state.get_critical_mass(current_r, current_c);
+            int current_row = current_cell.first, current_col = current_cell.second;
+            int critical_mass = next_state.get_critical_mass(current_row, current_col);
 
-            while (next_state.grid[current_r][current_c].count >= critical_mass)
+            while (next_state.grid[current_row][current_col].count >= critical_mass)
             {
-                next_state.grid[current_r][current_c].count -= critical_mass;
-                if (next_state.grid[current_r][current_c].count == 0)
-                    next_state.grid[current_r][current_c].color = EMPTY;
+                next_state.grid[current_row][current_col].count -= critical_mass;
+                if (next_state.grid[current_row][current_col].count == 0)
+                    next_state.grid[current_row][current_col].color = EMPTY;
 
                 for (int i = 0; i < 4; ++i)
                 {
-                    int neighbor_r = current_r + row_offsets[i], neighbor_c = current_c + col_offsets[i];
-                    if (neighbor_r >= 0 && neighbor_r < next_state.num_rows && neighbor_c >= 0 && neighbor_c < next_state.num_cols)
+                    int neighbor_row = current_row + row_offsets[i], neighbor_col = current_col + col_offsets[i];
+                    if (neighbor_row >= 0 && neighbor_row < next_state.rows && neighbor_col >= 0 && neighbor_col < next_state.cols)
                     {
-                        if (next_state.grid[neighbor_r][neighbor_c].color != EMPTY && next_state.grid[neighbor_r][neighbor_c].color != p_color)
+                        if (next_state.grid[neighbor_row][neighbor_col].color != p_color)
                         {
-                            next_state.grid[neighbor_r][neighbor_c].color = p_color;
+                            next_state.grid[neighbor_row][neighbor_col].color = p_color;
                         }
-                        else if (next_state.grid[neighbor_r][neighbor_c].color == EMPTY)
+                        next_state.grid[neighbor_row][neighbor_col].count++;
+                        if (next_state.grid[neighbor_row][neighbor_col].count >= next_state.get_critical_mass(neighbor_row, neighbor_col))
                         {
-                            next_state.grid[neighbor_r][neighbor_c].color = p_color;
-                        }
-                        next_state.grid[neighbor_r][neighbor_c].count++;
-                        if (next_state.grid[neighbor_r][neighbor_c].count >= next_state.get_critical_mass(neighbor_r, neighbor_c))
-                        {
-                            explosion_queue.push({neighbor_r, neighbor_c});
+                            explosion_queue.push({neighbor_row, neighbor_col});
                         }
                     }
                 }
             }
         }
+
+        next_state.active_players.clear();
+        for (int r_idx = 0; r_idx < next_state.rows; ++r_idx)
+        {
+            for (int c_idx = 0; c_idx < next_state.cols; ++c_idx)
+            {
+                if (next_state.grid[r_idx][c_idx].color == RED)
+                {
+                    next_state.active_players.insert('R');
+                }
+                else if (next_state.grid[r_idx][c_idx].color == BLUE)
+                {
+                    next_state.active_players.insert('B');
+                }
+            }
+        }
+
         next_state.current_player_color = (player_char == 'R') ? 'B' : 'R';
         return next_state;
     }
 
     bool is_game_over() const
     {
-        int red_orb_count = 0, blue_orb_count = 0, empty_count = 0;
-        for (int r = 0; r < num_rows; ++r)
-            for (int c = 0; c < num_cols; ++c)
+        int red_orb_count = 0;
+        int blue_orb_count = 0;
+
+        for (int row = 0; row < rows; ++row)
+        {
+            for (int col = 0; col < cols; ++col)
             {
-                if (grid[r][c].color == RED)
-                    red_orb_count += grid[r][c].count;
-                else if (grid[r][c].color == BLUE)
-                    blue_orb_count += grid[r][c].count;
+                if (grid[row][col].color == RED)
+                    red_orb_count++;
+                else if (grid[row][col].color == BLUE)
+                    blue_orb_count++;
             }
+        }
         if (red_orb_count == 0 && blue_orb_count == 0)
             return false;
-        return (red_orb_count == 0 && blue_orb_count > 0) || (blue_orb_count == 0 && red_orb_count > 0);
+
+        bool is_red_eliminated = (red_orb_count == 0 && blue_orb_count > 0);
+        bool is_blue_eliminated = (blue_orb_count == 0 && red_orb_count > 0);
+
+        if (active_players.size() < 2 && total_moves_made < 2)
+        {
+            return false;
+        }
+
+        return is_red_eliminated || is_blue_eliminated;
     }
+
     char get_winner() const
     {
         int red_orb_count = 0, blue_orb_count = 0;
-        for (int r = 0; r < num_rows; ++r)
-            for (int c = 0; c < num_cols; ++c)
+        for (int row = 0; row < rows; ++row)
+            for (int col = 0; col < cols; ++col)
             {
-                if (grid[r][c].color == RED)
-                    red_orb_count += grid[r][c].count;
-                else if (grid[r][c].color == BLUE)
-                    blue_orb_count += grid[r][c].count;
+                if (grid[row][col].color == RED)
+                    red_orb_count++;
+                else if (grid[row][col].color == BLUE)
+                    blue_orb_count++;
             }
         if (red_orb_count == 0 && blue_orb_count > 0)
             return 'B';
@@ -147,14 +188,15 @@ public:
         }
         return children;
     }
+
     std::vector<std::pair<int, int>> get_legal_moves(char player_char) const
     {
         std::vector<std::pair<int, int>> legal_moves;
-        for (int r = 0; r < num_rows; ++r)
-            for (int c = 0; c < num_cols; ++c)
+        for (int row = 0; row < rows; ++row)
+            for (int col = 0; col < cols; ++col)
             {
-                if (is_valid_move(r, c, player_char))
-                    legal_moves.push_back({r, c});
+                if (is_valid_move(row, col, player_char))
+                    legal_moves.push_back({row, col});
             }
         return legal_moves;
     }
@@ -162,11 +204,11 @@ public:
     std::string to_string() const
     {
         std::string s;
-        for (int r = 0; r < num_rows; ++r)
+        for (int row = 0; row < rows; ++row)
         {
-            for (int c = 0; c < num_cols; ++c)
+            for (int col = 0; col < cols; ++col)
             {
-                const Cell &cell = grid[r][c];
+                const Cell &cell = grid[row][col];
                 if (cell.color == EMPTY)
                     s += "0";
                 else
@@ -174,7 +216,7 @@ public:
                     s += std::to_string(cell.count);
                     s += (cell.color == RED) ? 'R' : 'B';
                 }
-                if (c < num_cols - 1)
+                if (col < cols - 1)
                     s += " ";
             }
             s += "\n";
@@ -188,23 +230,39 @@ public:
             throw std::invalid_argument("Empty grid.");
         Board new_board(str_grid.size(), str_grid[0].size());
         new_board.set_current_player_color(player_turn);
-        for (int r = 0; r < str_grid.size(); ++r)
-            for (int c = 0; c < str_grid[r].size(); ++c)
+
+        for (int row = 0; row < str_grid.size(); ++row)
+        {
+            for (int col = 0; col < str_grid[row].size(); ++col)
             {
-                const std::string &cell_str = str_grid[r][c];
+                const std::string &cell_str = str_grid[row][col];
                 if (cell_str == "0")
-                    new_board.grid[r][c] = {0, EMPTY};
+                {
+                    new_board.grid[row][col] = {0, EMPTY};
+                }
                 else
                 {
                     int count = std::stoi(cell_str.substr(0, cell_str.length() - 1));
                     char color_char = cell_str.back();
-                    new_board.grid[r][c] = {count, new_board.char_to_orb_color(color_char)};
-                    if (new_board.grid[r][c].color == EMPTY && color_char != '0')
-                        throw std::invalid_argument("Invalid color.");
+                    OrbColor cell_color = new_board.char_to_orb_color(color_char);
+                    new_board.grid[row][col] = {count, cell_color};
+
+                    if (cell_color == RED)
+                    {
+                        new_board.active_players.insert('R');
+                        new_board.total_moves_made++;
+                    }
+                    else if (cell_color == BLUE)
+                    {
+                        new_board.active_players.insert('B');
+                        new_board.total_moves_made++;
+                    }
                 }
             }
+        }
         return new_board;
     }
+
     OrbColor char_to_orb_color(char player_char) const
     {
         if (player_char == 'R')
@@ -214,3 +272,5 @@ public:
         return EMPTY;
     }
 };
+
+#endif // BOARD_H

@@ -9,7 +9,7 @@
 
 const int BOARD_ROWS = 9;
 const int BOARD_COLS = 6;
-const int AI_SEARCH_DEPTH = 1;
+const int AI_SEARCH_DEPTH = 2;
 const char AI_PLAYER_CHAR = 'B';
 const char HUMAN_PLAYER_CHAR = 'R';
 const std::string GAME_STATE_FILE = "input.txt";
@@ -31,23 +31,17 @@ std::string parse_header(const std::string &line)
 
 int main()
 {
-  std::cerr << "C++ Agent: Starting execution\n";
   std::ifstream input_file_stream(GAME_STATE_FILE);
   if (!input_file_stream.is_open())
-  {
-    std::cerr << "C++ Agent Error: Cannot open " << GAME_STATE_FILE << " for reading.\n";
     return 1;
-  }
 
   std::string header_line;
   if (!std::getline(input_file_stream, header_line))
   {
-    std::cerr << "C++ Agent Error: Cannot read header from " << GAME_STATE_FILE << ".\n";
     input_file_stream.close();
     return 1;
   }
   std::string last_mover_type = parse_header(header_line);
-  std::cerr << "C++ Agent: Header parsed: " << last_mover_type << "\n";
 
   char current_player_char;
   int human_row = -1, human_col = -1;
@@ -58,35 +52,27 @@ int main()
     header_stream >> token >> token;
     if (!(header_stream >> human_row >> human_col))
     {
-      std::cerr << "C++ Agent Error: Invalid Human Move format in " << GAME_STATE_FILE << ".\n";
       input_file_stream.close();
       return 1;
     }
     current_player_char = AI_PLAYER_CHAR;
-    std::cerr << "C++ Agent: Human move at (" << human_row << "," << human_col << ")\n";
   }
   else if (last_mover_type == "AI")
-  {
     current_player_char = HUMAN_PLAYER_CHAR;
-  }
   else if (last_mover_type == "Initializing")
-  {
     current_player_char = AI_PLAYER_CHAR;
-  }
   else
   {
-    std::cerr << "C++ Agent Error: Unknown header '" << header_line << "' in " << GAME_STATE_FILE << ".\n";
     input_file_stream.close();
     return 1;
   }
 
   std::vector<std::vector<std::string>> string_grid(BOARD_ROWS, std::vector<std::string>(BOARD_COLS));
-  for (int r = 0; r < BOARD_ROWS; ++r)
+  for (int row = 0; row < BOARD_ROWS; ++row)
   {
     std::string row_line;
     if (!std::getline(input_file_stream, row_line))
     {
-      std::cerr << "C++ Agent Error: Incomplete board data in " << GAME_STATE_FILE << " at row " << r << ".\n";
       input_file_stream.close();
       return 1;
     }
@@ -95,18 +81,17 @@ int main()
     int c = 0;
     while (space_pos != std::string::npos && c < BOARD_COLS)
     {
-      string_grid[r][c] = row_line.substr(start_pos, space_pos - start_pos);
+      string_grid[row][c] = row_line.substr(start_pos, space_pos - start_pos);
       start_pos = space_pos + 1;
       space_pos = row_line.find(' ', start_pos);
       c++;
     }
     if (c < BOARD_COLS)
     {
-      string_grid[r][c] = row_line.substr(start_pos);
+      string_grid[row][c] = row_line.substr(start_pos);
     }
   }
   input_file_stream.close();
-  std::cerr << "C++ Agent: Board parsed\n";
 
   Board current_game_board(BOARD_ROWS, BOARD_COLS);
   try
@@ -149,11 +134,11 @@ int main()
   if (current_game_board.get_current_player_color() == AI_PLAYER_CHAR)
   {
     bool is_board_empty = true;
-    for (int r = 0; r < BOARD_ROWS; ++r)
+    for (int row = 0; row < BOARD_ROWS; ++row)
     {
       for (int c = 0; c < BOARD_COLS; ++c)
       {
-        if (current_game_board.grid[r][c].color != EMPTY)
+        if (current_game_board.grid[row][c].color != EMPTY)
         {
           is_board_empty = false;
           break;

@@ -3,14 +3,13 @@
 
 int evaluate_heuristic(const Board &board, char player_color)
 {
-    std::cerr << "Heuristic: Evaluating for Player " << player_color << "\n";
     int player_progress = 0;
     int opponent_progress = 0;
     char opponent_color = (player_color == 'R') ? 'B' : 'R';
 
-    for (int r = 0; r < board.num_rows; ++r)
+    for (int r = 0; r < board.rows; ++r)
     {
-        for (int c = 0; c < board.num_cols; ++c)
+        for (int c = 0; c < board.cols; ++c)
         {
             if (board.grid[r][c].color == board.char_to_orb_color(player_color))
             {
@@ -32,6 +31,5 @@ int evaluate_heuristic(const Board &board, char player_color)
     }
 
     int eval = player_progress - opponent_progress;
-    std::cerr << "Heuristic: Player " << player_color << ", Eval " << eval << "\n";
     return eval;
 }
