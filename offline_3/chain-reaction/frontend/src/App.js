@@ -9,28 +9,34 @@ function App() {
   const [gameStatus, setGameStatus] = useState('Waiting for AI to start...');
   const [winner, setWinner] = useState('N');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [currentPlayer, setCurrentPlayer] = useState('N');
 
   const fetchGameState = useCallback(async () => {
     if (isProcessing) return;
+
     try {
       const response = await fetch(`${API_BASE_URL}/state`);
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
       const data = await response.json();
-      console.log('Fetched state:', data);
+
       setBoardData(data.grid);
       setWinner(data.winner);
+      setCurrentPlayer(data.currentPlayer);
+
       if (data.winner !== 'N') {
         setGameStatus(`Game Over! Winner: ${data.winner === 'R' ? 'Red' : 'Blue'}!`);
       } else if (data.currentPlayer === 'R') {
         setGameStatus("Your Turn (Red)");
-      } else {
+      } else if (data.currentPlayer === 'B') {
         setGameStatus("AI's Turn (Blue)");
+      } else {
+        setGameStatus("Game Starting...");
       }
     } catch (error) {
       console.error("Failed to fetch game state:", error);
-      setGameStatus("Error connecting to server.");
+      setGameStatus("Error connecting to server. Please ensure server is running.");
     }
   }, [isProcessing]);
 
@@ -41,43 +47,48 @@ function App() {
   }, [fetchGameState]);
 
   const handleCellClick = async (row, col) => {
-    console.log(`Clicked cell (${row}, ${col})`);
-    if (gameStatus !== "Your Turn (Red)" || winner !== 'N') {
-      console.log('Cannot click: Not your turn or game is over.', { gameStatus, winner });
+    if (isProcessing || currentPlayer !== 'R' || winner !== 'N') {
       return;
     }
+
+    // Optional chaining added for safety if boardData/cell is null/undefined during a very fast update
+    const clickedCell = boardData?.[row]?.[col];
+    if (clickedCell?.color !== 'E' && clickedCell?.color !== 'R') {
+      setGameStatus("Invalid move: Cell occupied by opponent or not empty. Try again.");
+      return;
+    }
+
     setIsProcessing(true);
     setGameStatus('Sending your move...');
+
     try {
       const response = await fetch(`${API_BASE_URL}/move`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ row, col, player: 'R' }),
+        body: JSON.stringify({ row, col, player: 'R' }), // 'R' for human player
       });
+
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Move error:', errorData);
         throw new Error(`Move failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
       }
-      const data = await response.json();
-      console.log('Move response:', data);
-      setBoardData(data.grid);
-      setWinner(data.winner);
-      setGameStatus(data.winner !== 'N' ? `Game Over! Winner: ${data.winner === 'R' ? 'Red' : 'Blue'}!` : "Your Turn (Red)");
+      // No need to set boardData/winner here, polling will update it after C++ agent runs
+      // console.log('Move sent, waiting for server update...');
+
     } catch (error) {
       console.error("Error sending move:", error);
       setGameStatus(`Error: ${error.message}`);
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false); // Re-enable processing once the API call is done, fetchGameState will catch up
     }
   };
 
   const handleResetGame = async () => {
-    console.log('Resetting game');
-    setIsProcessing(true);
+    setIsProcessing(true); // Disable interactions
     setGameStatus('Resetting game...');
+
     try {
       const response = await fetch(`${API_BASE_URL}/reset`, {
         method: 'POST',
@@ -85,35 +96,44 @@ function App() {
           'Content-Type': 'application/json',
         },
       });
+
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Reset error:', errorData);
         throw new Error(`Reset failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
       }
-      const data = await response.json();
-      console.log('Reset response:', data);
-      setBoardData(data.grid);
-      setWinner(data.winner);
-      setGameStatus(data.currentPlayer === 'R' ? "Your Turn (Red)" : "AI's Turn (Blue)");
+      // Polling will handle fetching the new state after reset
+      // console.log('Reset request sent, waiting for server update...');
+
     } catch (error) {
       console.error("Error resetting game:", error);
       setGameStatus(`Error: ${error.message}`);
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false); // Re-enable interactions
     }
   };
 
+  // Helper to get dynamic CSS classes for cells
   const getCellClasses = (cell) => {
     let classes = 'cell';
-    if (cell.color === 'R') classes += ' cell-red';
-    else if (cell.color === 'B') classes += ' cell-blue';
+    // Optional chaining added for safety
+    if (cell?.color === 'R') classes += ' cell-red';
+    else if (cell?.color === 'B') classes += ' cell-blue';
     else classes += ' cell-empty';
+
+    // Determine if the cell is clickable based on game state and current player
+    const canClick = (currentPlayer === 'R' && winner === 'N' && !isProcessing && (cell?.color === 'E' || cell?.color === 'R'));
+    if (canClick) {
+      classes += ' clickable';
+    } else {
+      classes += ' not-clickable'; // Visually distinguish non-clickable cells
+    }
     return classes;
   };
 
   return (
-    <div className="App">
-      <h1>Chain Reaction Game</h1>
+    <div className={`App ${isProcessing ? 'processing' : ''}`}>
+      <div className="anim-gradient-bg"></div> {/* Animated background div (first child) */}
+      <h1>Chain Reaction</h1>
       <p className="game-status">{gameStatus}</p>
       {boardData.length > 0 ? (
         <div className="board-grid">
@@ -125,17 +145,18 @@ function App() {
                   className={getCellClasses(cell)}
                   onClick={() => handleCellClick(rIdx, cIdx)}
                 >
-                  {cell.count > 0 ? cell.count : ''}
+                  {/* Render count only if greater than 0, wrapped in span for animation */}
+                  {cell?.count > 0 ? <span>{cell.count}</span> : ''}
                 </div>
               ))}
             </div>
           ))}
         </div>
       ) : (
-        <p>Board is loading or empty.</p>
+        <p>Loading game board...</p>
       )}
-      <button onClick={handleResetGame} className="reset-button">
-        Reset Game
+      <button onClick={handleResetGame} className="reset-button" disabled={isProcessing}>
+        {isProcessing ? 'Processing...' : 'Reset Game'}
       </button>
     </div>
   );

@@ -207,7 +207,7 @@ public:
 
 // --- Heuristic Function ---
 // (Copied directly from your heuristic.cpp)
-int evaluate_heuristic(const Board &state, char maximizing_player_color)
+int simple_heuristic(const Board &state, char maximizing_player_color)
 {
     int player_orbs = 0, opponent_orbs = 0;
     OrbColor player_enum = state.char_to_orb_color(maximizing_player_color);
@@ -332,7 +332,7 @@ int main()
     // 4. Call Minimax for the AI (Blue)
     // Pass the test board, depth, AI player, infinity values, and heuristic function
     std::pair<std::pair<int, int>, int> ai_move_result =
-        minimax(test_board, TEST_AI_DEPTH, 'B', INF_NEG_VAL, INF_POS_VAL, evaluate_heuristic);
+        minimax(test_board, TEST_AI_DEPTH, 'B', INF_NEG_VAL, INF_POS_VAL, simple_heuristic);
 
     // 5. Print the AI's chosen move and its predicted value
     std::cout << "\n--- AI's Decision (Player " << 'B' << ") ---\n";

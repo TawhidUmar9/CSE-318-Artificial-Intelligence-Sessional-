@@ -7,7 +7,8 @@
 const int INF_POS_VAL = std::numeric_limits<int>::max();
 const int INF_NEG_VAL = std::numeric_limits<int>::min();
 
-std::pair<std::pair<int, int>, double> minimax(Board state, int depth, char maximizing_player_color, double alpha, double beta, double (*heuristic_func)(const Board &, char))
+std::pair<std::pair<int, int>, double> minimax(Board state, int depth, char maximizing_player_color, double alpha, double beta, double (*heuristic_func_1)(const Board &, char),
+                                               double (*heuristic_func_2)(const Board &, char))
 {
     if (state.is_game_over())
     {
@@ -20,7 +21,7 @@ std::pair<std::pair<int, int>, double> minimax(Board state, int depth, char maxi
     }
     if (depth == 0)
     {
-        double eval = heuristic_func(state, maximizing_player_color);
+        double eval = heuristic_func_1(state, maximizing_player_color);
         return {{-1, -1}, eval};
     }
 
@@ -30,7 +31,7 @@ std::pair<std::pair<int, int>, double> minimax(Board state, int depth, char maxi
 
     if (child_states.empty())
     {
-        return {{-1, -1}, heuristic_func(state, maximizing_player_color)};
+        return {{-1, -1}, heuristic_func_1(state, maximizing_player_color)};
     }
 
     if (current_player_on_turn == maximizing_player_color)
@@ -40,7 +41,7 @@ std::pair<std::pair<int, int>, double> minimax(Board state, int depth, char maxi
         for (size_t i = 0; i < child_states.size(); ++i)
         {
             const auto &child = child_states[i];
-            double eval = minimax(child, depth - 1, opponent_color, alpha, beta, heuristic_func).second;
+            double eval = minimax(child, depth - 1, opponent_color, alpha, beta, heuristic_func_2, heuristic_func_1).second;
             if (eval > max_eval)
             {
                 max_eval = eval;
@@ -60,7 +61,7 @@ std::pair<std::pair<int, int>, double> minimax(Board state, int depth, char maxi
         for (size_t i = 0; i < child_states.size(); ++i)
         {
             const auto &child = child_states[i];
-            double eval = minimax(child, depth - 1, maximizing_player_color, alpha, beta, heuristic_func).second;
+            double eval = minimax(child, depth - 1, maximizing_player_color, alpha, beta, heuristic_func_1, heuristic_func_2).second;
             if (eval < min_eval)
                 min_eval = eval;
             beta = std::min(beta, min_eval);

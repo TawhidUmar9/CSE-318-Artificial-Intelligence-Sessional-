@@ -1,54 +1,213 @@
+
+:root {
+  --primary-color: #9a7197; /* Dark purple */
+  --secondary-color: #ece5f0; /* Light purple/grey */
+  --red-player-color: #e57373; /* A pleasant red for player R */
+  --blue-player-color: #64b5f6; /* A pleasant blue for player B */
+  --empty-cell-bg: #f9f9f9; /* Off-white for empty cells */
+  --border-color: #cccccc;
+  --text-color: #333;
+
+  --page-gradient-color-1: #9a7197; /* Your original dark purple as base */
+  --page-gradient-color-2: #c4a1c5; /* Lighter purple */
+  --page-gradient-color-3: #f0e6f3; /* Very light purple */
+  --page-gradient-color-4: #e0f7fa; /* Light cyan/blue */
+  --page-gradient-color-5: #e6ffee; /* Very light green */
+  --page-gradient-color-6: #fffbe6; /* Pale yellow */
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  color: var(--text-color);
+  overflow: hidden;
+  background-color: transparent;
+  position: relative;
+}
+
+.anim-gradient-bg {
+  position: fixed; 
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    var(--page-gradient-color-1) 0%,
+    var(--page-gradient-color-2) 20%,
+    var(--page-gradient-color-3) 40%,
+    var(--page-gradient-color-4) 60%,
+    var(--page-gradient-color-5) 80%,
+    var(--page-gradient-color-6) 100%
+  );
+  background-size: 400% 400%; 
+  animation: gradientAnimation 25s ease infinite; 
+  z-index: -1; 
+}
+
+@keyframes gradientAnimation {
+  0% {
+    background-position: 0% 50%; 
+  }
+  50% {
+    background-position: 100% 50%; 
+  }
+  100% {
+    background-position: 0% 50%; 
+  }
+}
+
 .App {
+  background-color: #ffffff; 
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
   text-align: center;
-  font-family: Arial, sans-serif;
-  padding: 20px;
+  width: 90%;
+  max-width: 700px;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
+
+h1 {
+  color: #3d303d;
+  margin-bottom: 20px;
+  font-size: 2.5em;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
 .game-status {
-  font-size: 18px;
-  margin: 10px 0;
+  font-size: 1.2em;
+  font-weight: 600;
+  margin-bottom: 30px;
+  color: var(--primary-color);
+  animation: pulseStatus 1.5s infinite alternate;
 }
+
+@keyframes pulseStatus {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .board-grid {
-  display: inline-block;
-  border: 2px solid #333;
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 0 auto 30px auto;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
 }
+
 .row {
   display: flex;
+  line-height: 0;
 }
+
 .cell {
-  width: 40px;
-  height: 40px;
-  border: 1px solid #333;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 16px;
-  cursor: pointer;
+  width: calc(100% / 6);
+  padding-bottom: calc(100% / 6);
+  position: relative;
+  border: 1px solid var(--border-color);
+  font-size: 1.5em;
+  font-weight: bold;
   user-select: none;
+  transition: background-color 0.3s ease, transform 0.1s ease-out, box-shadow 0.3s ease;
+  cursor: default;
+  overflow: hidden;
 }
+
+.cell span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #fff;
+  font-size: 1em;
+  line-height: 1;
+  animation: fadeInOut 0.5s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
 .cell-empty {
-  background-color: #f0f0f0;
+  background-color: var(--empty-cell-bg);
+  color: var(--text-color);
 }
+
 .cell-red {
-  background-color: #ffcccc;
-  color: #cc0000;
+  background-color: var(--red-player-color);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
 }
+
 .cell-blue {
-  background-color: #ccccff;
-  color: #0000cc;
+  background-color: var(--blue-player-color);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
 }
-.cell:hover {
-  background-color: #ddd;
+
+.cell.clickable {
+  cursor: pointer;
 }
+
+.cell.clickable:hover {
+  transform: scale(1.05);
+  z-index: 1;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+}
+
+.cell.not-clickable {
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
 .reset-button {
-  margin-top: 20px;
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #4CAF50;
+  padding: 12px 25px;
+  font-size: 1.1em;
+  font-weight: 600;
+  background-color: var(--primary-color);
   color: white;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease-out;
+  margin-top: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
+
 .reset-button:hover {
-  background-color: #45a049;
+  background-color: #7d5a7d;
+  transform: translateY(-2px);
+}
+
+.reset-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.App.processing .board-grid .cell {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.App.processing .reset-button {
+  opacity: 0.7;
+  cursor: not-allowed;
 }

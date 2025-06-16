@@ -36,7 +36,16 @@ public:
         current_player_color = 'R';
     }
 
-    Board(const Board &other) = default;
+    Board(const Board &other)
+    {
+        rows = other.rows;
+        cols = other.cols;
+        grid = other.grid;
+        current_player_color = other.current_player_color;
+        last_move_coords = other.last_move_coords;
+        active_players = other.active_players;
+        total_moves_made = other.total_moves_made;
+    }
 
     int get_critical_mass(int row, int col) const
     {
@@ -56,71 +65,86 @@ public:
     }
 
     Board apply_move(int row, int col, char player_char) const
+
     {
         Board next_state = *this;
         next_state.total_moves_made++;
         OrbColor p_color = char_to_orb_color(player_char);
 
-        if (next_state.grid[row][col].color == EMPTY)
-            next_state.grid[row][col].color = p_color;
-        next_state.grid[row][col].count++;
-
+        Cell &target_cell = next_state.grid[row][col];
+        target_cell.color = p_color;
+        target_cell.count++;
         std::queue<std::pair<int, int>> explosion_queue;
-        if (next_state.grid[row][col].count >= next_state.get_critical_mass(row, col))
+        std::vector<std::vector<bool>> in_queue(next_state.rows, std::vector<bool>(next_state.cols, false));
+
+        if (target_cell.count >= next_state.get_critical_mass(row, col))
         {
             explosion_queue.push({row, col});
+            in_queue[row][col] = true;
         }
-
-        int row_offsets[] = {-1, 1, 0, 0}, col_offsets[] = {0, 0, -1, 1};
-
+        int row_offsets[] = {-1, 1, 0, 0};
+        int col_offsets[] = {0, 0, -1, 1};
         while (!explosion_queue.empty())
         {
-            std::pair<int, int> current_cell = explosion_queue.front();
+            std::pair<int, int> current_pos = explosion_queue.front();
             explosion_queue.pop();
-            int current_row = current_cell.first, current_col = current_cell.second;
-            int critical_mass = next_state.get_critical_mass(current_row, current_col);
+            in_queue[current_pos.first][current_pos.second] = false;
+            next_state.last_move_coords = current_pos;
+            next_state.active_players.insert(player_char);
+            int row = current_pos.first;
+            int col = current_pos.second;
+            OrbColor explosion_color = next_state.grid[row][col].color;
+            int critical_mass = next_state.get_critical_mass(row, col);
+            next_state.grid[row][col].count -= critical_mass;
+            if (next_state.grid[row][col].count == 0)
+                next_state.grid[row][col].color = EMPTY;
 
-            while (next_state.grid[current_row][current_col].count >= critical_mass)
+            for (int i = 0; i < 4; ++i)
             {
-                next_state.grid[current_row][current_col].count -= critical_mass;
-                if (next_state.grid[current_row][current_col].count == 0)
-                    next_state.grid[current_row][current_col].color = EMPTY;
-
-                for (int i = 0; i < 4; ++i)
+                int neighbour_row = row + row_offsets[i];
+                int neighbour_col = col + col_offsets[i];
+                if (neighbour_row >= 0 && neighbour_row < next_state.rows && neighbour_col >= 0 && neighbour_col < next_state.cols)
                 {
-                    int neighbor_row = current_row + row_offsets[i], neighbor_col = current_col + col_offsets[i];
-                    if (neighbor_row >= 0 && neighbor_row < next_state.rows && neighbor_col >= 0 && neighbor_col < next_state.cols)
+                    Cell &neighbor_cell = next_state.grid[neighbour_row][neighbour_col];
+                    neighbor_cell.color = explosion_color;
+                    neighbor_cell.count++;
+                    if (neighbor_cell.count >= next_state.get_critical_mass(neighbour_row, neighbour_col) && !in_queue[neighbour_row][neighbour_col])
                     {
-                        if (next_state.grid[neighbor_row][neighbor_col].color != p_color)
-                        {
-                            next_state.grid[neighbor_row][neighbor_col].color = p_color;
-                        }
-                        next_state.grid[neighbor_row][neighbor_col].count++;
-                        if (next_state.grid[neighbor_row][neighbor_col].count >= next_state.get_critical_mass(neighbor_row, neighbor_col))
-                        {
-                            explosion_queue.push({neighbor_row, neighbor_col});
-                        }
+                        explosion_queue.push({neighbour_row, neighbour_col});
+                        in_queue[neighbour_row][neighbour_col] = true;
                     }
                 }
             }
         }
-
-        next_state.active_players.clear();
-        for (int r_idx = 0; r_idx < next_state.rows; ++r_idx)
+        char opponent_char = (player_char == 'R') ? 'B' : 'R';
+        bool opponent_found = false;
+        for (int row = 0; row < next_state.rows; ++row)
         {
-            for (int c_idx = 0; c_idx < next_state.cols; ++c_idx)
+            for (int col = 0; col < next_state.cols; ++col)
             {
-                if (next_state.grid[r_idx][c_idx].color == RED)
+                if (next_state.grid[row][col].color == char_to_orb_color(opponent_char))
                 {
-                    next_state.active_players.insert('R');
-                }
-                else if (next_state.grid[r_idx][c_idx].color == BLUE)
-                {
-                    next_state.active_players.insert('B');
+                    opponent_found = true;
+                    break;
                 }
             }
-        }
+            if (next_state.grid[row][col].color == char_to_orb_color(opponent_char))
+            {
+                opponent_found = true;
+                break;
+            }
 
+            if (opponent_found)
+            {
+                break;
+            }
+        }
+        next_state.active_players.clear();
+        next_state.active_players.insert(player_char);
+        if (opponent_found)
+        {
+            next_state.active_players.insert(opponent_char);
+        }
         next_state.current_player_color = (player_char == 'R') ? 'B' : 'R';
         return next_state;
     }
@@ -223,6 +247,12 @@ public:
         }
         return s;
     }
+    bool is_critical(int row, int col) const
+    {
+        if (row < 0 || row >= rows || col < 0 || col >= cols)
+            return false;
+        return grid[row][col].count >= get_critical_mass(row, col);
+    }
 
     static Board from_string_vector(const std::vector<std::vector<std::string>> &str_grid, char player_turn)
     {
@@ -261,6 +291,16 @@ public:
             }
         }
         return new_board;
+    }
+    bool is_empty() const
+    {
+        for (int row = 0; row < rows; ++row)
+            for (int col = 0; col < cols; ++col)
+            {
+                if (grid[row][col].count > 0)
+                    return false;
+            }
+        return true;
     }
 
     OrbColor char_to_orb_color(char player_char) const

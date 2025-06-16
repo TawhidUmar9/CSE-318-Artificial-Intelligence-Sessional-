@@ -1,0 +1,237 @@
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.276848 seconds
+Game Result: R
+Total Turns: 139
+Elapsed Time: 0.443511 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0223349 seconds
+Game Result: B
+Total Turns: 132
+Elapsed Time: 0.21376 seconds
+Game Result: B
+Total Turns: 132
+Elapsed Time: 0.203315 seconds
+Game Result: R
+Total Turns: 131
+Elapsed Time: 6.75749 seconds
+Game Result: B
+Total Turns: 132
+Elapsed Time: 0.215467 seconds
+Game Result: R
+Total Turns: 149
+Elapsed Time: 0.422857 seconds
+Game Result: R
+Total Turns: 149
+Elapsed Time: 0.428633 seconds
+Game Result: R
+Total Turns: 149
+Elapsed Time: 0.429889 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.000387931 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.000300331 seconds
+Game Result: R
+Total Turns: 149
+Elapsed Time: 0.4369 seconds
+Game Result: R
+Total Turns: 129
+Elapsed Time: 5.69495 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0227176 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0240675 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0241147 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0245383 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0235405 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0239429 seconds
+Game Result: B
+Total Turns: 128
+Elapsed Time: 0.25304 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0229722 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0221334 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0234765 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0231911 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.021463 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0227832 seconds
+Game Result: B
+Total Turns: 132
+Elapsed Time: 0.0226365 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0213678 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0261951 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0245523 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0246769 seconds
+Game Result: B
+Total Turns: 132
+Elapsed Time: 0.0243706 seconds
+Game Result: B
+Total Turns: 132
+Elapsed Time: 0.023082 seconds
+Game Result: Draw
+Total Turns: 2000
+Elapsed Time: 1.75561 seconds
+Game Result: B
+Total Turns: 132
+Elapsed Time: 0.0244667 seconds
+Game Result: Draw
+Total Turns: 2000
+Elapsed Time: 1.77933 seconds
+Game Result: R
+Total Turns: 129
+Elapsed Time: 0.243508 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.000320885 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.000348184 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.000309758 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.000303202 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.000286923 seconds
+Game Result: R
+Total Turns: 3
+Elapsed Time: 0.0101628 seconds
+Game Result: R
+Total Turns: 3
+Elapsed Time: 0.0091534 seconds
+Game Result: B
+Total Turns: 6
+Elapsed Time: 0.00108016 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.000300941 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.00032564 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.000355162 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.000338412 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.000276842 seconds
+Game Result: R
+Total Turns: 3
+Elapsed Time: 0.00982932 seconds
+Game Result: R
+Total Turns: 3
+Elapsed Time: 0.00949859 seconds
+Game Result: R
+Total Turns: 3
+Elapsed Time: 0.0101068 seconds
+Game Result: R
+Total Turns: 3
+Elapsed Time: 0.00826819 seconds
+Game Result: R
+Total Turns: 3
+Elapsed Time: 0.00918853 seconds
+Game Result: R
+Total Turns: 3
+Elapsed Time: 0.0104824 seconds
+Game Result: R
+Total Turns: 3
+Elapsed Time: 0.0100406 seconds
+Game Result: R
+Total Turns: 3
+Elapsed Time: 0.0111112 seconds
+Game Result: Draw
+Total Turns: 2000
+Elapsed Time: 2.95472 seconds
+Game Result: R
+Total Turns: 3
+Elapsed Time: 0.00677239 seconds
+Game Result: R
+Total Turns: 3
+Elapsed Time: 0.00693024 seconds
+Game Result: R
+Total Turns: 3
+Elapsed Time: 0.00760504 seconds
+Game Result: R
+Total Turns: 3
+Elapsed Time: 0.00841916 seconds
+Game Result: R
+Total Turns: 3
+Elapsed Time: 0.00820873 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.000278298 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.000270402 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.000280621 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.0002977 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.000301363 seconds
+Game Result: B
+Total Turns: 134
+Elapsed Time: 0.479544 seconds
+Game Result: R
+Total Turns: 1
+Elapsed Time: 0.000402959 seconds
+Game Result: Draw
+Total Turns: 2000
+Elapsed Time: 2.65339 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.266615 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.222358 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0233739 seconds
+Game Result: R
+Total Turns: 133
+Elapsed Time: 0.0238277 seconds
+Game Result: B
+Total Turns: 132
+Elapsed Time: 0.221028 seconds
+Game Result: B
+Total Turns: 128
+Elapsed Time: 0.255127 seconds

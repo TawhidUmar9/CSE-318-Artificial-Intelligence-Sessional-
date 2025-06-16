@@ -26,15 +26,15 @@ function parseCellString(cellStr) {
 
 function boardGridToString(gridData) {
     let result = '';
-    for (let r = 0; r < gridData.length; r++) {
-        for (let c = 0; c < gridData[r].length; c++) {
-            const cell = gridData[r][c];
+    for (let row = 0; row < gridData.length; row++) {
+        for (let col = 0; col < gridData[row].length; col++) {
+            const cell = gridData[row][col];
             if (cell.count === 0) {
                 result += '0';
             } else {
                 result += `${cell.count}${cell.color}`;
             }
-            if (c < gridData[r].length - 1) {
+            if (col < gridData[row].length - 1) {
                 result += ' ';
             }
         }
