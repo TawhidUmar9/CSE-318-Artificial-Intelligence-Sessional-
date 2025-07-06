@@ -538,7 +538,6 @@ int main(int argc, char *argv[])
             global_node_count = 0;
             global_max_depth_reached = 0;
 
-            // KEY CHANGE: Create an initial vector of indices for the entire training set
             vector<size_t> train_indices(train_data.data_points.size());
             iota(train_indices.begin(), train_indices.end(), 0);
 
