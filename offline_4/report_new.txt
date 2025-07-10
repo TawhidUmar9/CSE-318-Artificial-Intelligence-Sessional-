@@ -3,127 +3,127 @@ Loading datasets...
 Datasets loaded.
 Processing dataset: iris
 Selected Criterion: IG, Max Depth: 2
-Average Accuracy over 20 runs: 92.8333%
+Average Accuracy over 20 runs: 94.5%
 Mean Stats over 20 runs:
     Average Nodes: 5
     Average Depth: 2
 Processing dataset: adult
 Selected Criterion: IG, Max Depth: 2
-Average Accuracy over 20 runs: 82.9817%
+Average Accuracy over 20 runs: 80.9527%
 Mean Stats over 20 runs:
-    Average Nodes: 51.7
+    Average Nodes: 277.9
     Average Depth: 2
 Loading datasets...
 Datasets loaded.
 Processing dataset: iris
 Selected Criterion: IGR, Max Depth: 2
-Average Accuracy over 20 runs: 94.1667%
-Mean Stats over 20 runs:
-    Average Nodes: 5
-    Average Depth: 2
-Processing dataset: adult
-Selected Criterion: IGR, Max Depth: 2
-Average Accuracy over 20 runs: 81.1492%
-Mean Stats over 20 runs:
-    Average Nodes: 7
-    Average Depth: 2
-Loading datasets...
-Datasets loaded.
-Processing dataset: iris
-Selected Criterion: NWIG, Max Depth: 2
-Average Accuracy over 20 runs: 92.5%
-Mean Stats over 20 runs:
-    Average Nodes: 5
-    Average Depth: 2
-Processing dataset: adult
-Selected Criterion: NWIG, Max Depth: 2
-Average Accuracy over 20 runs: 82.0375%
-Mean Stats over 20 runs:
-    Average Nodes: 19
-    Average Depth: 2
-Loading datasets...
-Datasets loaded.
-Processing dataset: iris
-Selected Criterion: IG, Max Depth: 3
-Average Accuracy over 20 runs: 95.8333%
-Mean Stats over 20 runs:
-    Average Nodes: 8.7
-    Average Depth: 3
-Processing dataset: adult
-Selected Criterion: IG, Max Depth: 3
-Average Accuracy over 20 runs: 84.0358%
-Mean Stats over 20 runs:
-    Average Nodes: 343.35
-    Average Depth: 3
-Loading datasets...
-Datasets loaded.
-Processing dataset: iris
-Selected Criterion: IGR, Max Depth: 3
 Average Accuracy over 20 runs: 92.6667%
 Mean Stats over 20 runs:
-    Average Nodes: 8.3
+    Average Nodes: 5
+    Average Depth: 2
+Processing dataset: adult
+Selected Criterion: IGR, Max Depth: 2
+Average Accuracy over 20 runs: 82.2478%
+Mean Stats over 20 runs:
+    Average Nodes: 155.15
+    Average Depth: 2
+Loading datasets...
+Datasets loaded.
+Processing dataset: iris
+Selected Criterion: NWIG, Max Depth: 2
+Average Accuracy over 20 runs: 92.8333%
+Mean Stats over 20 runs:
+    Average Nodes: 5
+    Average Depth: 2
+Processing dataset: adult
+Selected Criterion: NWIG, Max Depth: 2
+Average Accuracy over 20 runs: 81.9116%
+Mean Stats over 20 runs:
+    Average Nodes: 23.15
+    Average Depth: 2
+Loading datasets...
+Datasets loaded.
+Processing dataset: iris
+Selected Criterion: IG, Max Depth: 3
+Average Accuracy over 20 runs: 95%
+Mean Stats over 20 runs:
+    Average Nodes: 8.6
+    Average Depth: 3
+Processing dataset: adult
+Selected Criterion: IG, Max Depth: 3
+Average Accuracy over 20 runs: 84.7697%
+Mean Stats over 20 runs:
+    Average Nodes: 582.45
+    Average Depth: 3
+Loading datasets...
+Datasets loaded.
+Processing dataset: iris
+Selected Criterion: IGR, Max Depth: 3
+Average Accuracy over 20 runs: 92.8333%
+Mean Stats over 20 runs:
+    Average Nodes: 8.4
     Average Depth: 3
 Processing dataset: adult
 Selected Criterion: IGR, Max Depth: 3
-Average Accuracy over 20 runs: 81.8693%
+Average Accuracy over 20 runs: 83.7778%
 Mean Stats over 20 runs:
-    Average Nodes: 13
+    Average Nodes: 223
     Average Depth: 3
 Loading datasets...
 Datasets loaded.
 Processing dataset: iris
 Selected Criterion: NWIG, Max Depth: 3
-Average Accuracy over 20 runs: 95.1667%
+Average Accuracy over 20 runs: 93.8333%
 Mean Stats over 20 runs:
-    Average Nodes: 8.5
+    Average Nodes: 8.4
     Average Depth: 3
 Processing dataset: adult
 Selected Criterion: NWIG, Max Depth: 3
-Average Accuracy over 20 runs: 84.4043%
+Average Accuracy over 20 runs: 83.1806%
 Mean Stats over 20 runs:
-    Average Nodes: 43.5
+    Average Nodes: 225.45
     Average Depth: 3
 Loading datasets...
 Datasets loaded.
 Processing dataset: iris
 Selected Criterion: IG, Max Depth: 4
-Average Accuracy over 20 runs: 94.1667%
+Average Accuracy over 20 runs: 93.6667%
 Mean Stats over 20 runs:
-    Average Nodes: 12.8
-    Average Depth: 4
+    Average Nodes: 12.5
+    Average Depth: 3.95
 Processing dataset: adult
 Selected Criterion: IG, Max Depth: 4
-Average Accuracy over 20 runs: 84.0273%
+Average Accuracy over 20 runs: 85.5259%
 Mean Stats over 20 runs:
-    Average Nodes: 995.1
+    Average Nodes: 919.85
     Average Depth: 4
 Loading datasets...
 Datasets loaded.
 Processing dataset: iris
 Selected Criterion: IGR, Max Depth: 4
-Average Accuracy over 20 runs: 93.3333%
+Average Accuracy over 20 runs: 95.6667%
 Mean Stats over 20 runs:
-    Average Nodes: 12
+    Average Nodes: 12.2
     Average Depth: 4
 Processing dataset: adult
 Selected Criterion: IGR, Max Depth: 4
-Average Accuracy over 20 runs: 82.6079%
+Average Accuracy over 20 runs: 83.5967%
 Mean Stats over 20 runs:
-    Average Nodes: 24.15
+    Average Nodes: 252.25
     Average Depth: 4
 Loading datasets...
 Datasets loaded.
 Processing dataset: iris
 Selected Criterion: NWIG, Max Depth: 4
-Average Accuracy over 20 runs: 93%
+Average Accuracy over 20 runs: 92.8333%
 Mean Stats over 20 runs:
-    Average Nodes: 12.6
+    Average Nodes: 12.3
     Average Depth: 4
 Processing dataset: adult
 Selected Criterion: NWIG, Max Depth: 4
-Average Accuracy over 20 runs: 84.3881%
+Average Accuracy over 20 runs: 84.8726%
 Mean Stats over 20 runs:
-    Average Nodes: 94.25
+    Average Nodes: 592.35
     Average Depth: 4
 Tests finished.
-Time taken 2 hour 3 mins
+1 min 26 secs elapsed.

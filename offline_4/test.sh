@@ -1,7 +1,6 @@
 #! /usr/bin/bash
 
-# Corrected g++ command
-g++ -O3 -march=native -flto=auto -std=c++17 -o main test.cpp
+g++ -O3 -march=native -flto=auto -std=c++17 -o main 2105028.cpp
 if [ $? -ne 0 ]; then
     echo "Compilation failed"
     exit 1

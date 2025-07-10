@@ -29,7 +29,7 @@ public:
     string dataset_name;
 
     DataSet() = default;
-    DataSet(string name) : dataset_name(std::move(name)) {}
+    DataSet(string name) : dataset_name(move(name)) {}
 };
 
 class Node
@@ -40,7 +40,7 @@ public:
     int split_feature_index;
     string split_feature_name;
     bool is_numerical_split;
-    double split_value;
+    double split_value; // for numerical splits
 
     unordered_map<string, Node *> children;
 
@@ -120,7 +120,7 @@ double calculate_entropy(const DataSet &original_data, const vector<size_t> &ind
     return entropy;
 }
 
-double information_gain(double entropy_parent, const DataSet &original_data, const vector<vector<size_t>> &children_splits, double total_parent_size)
+double calculate_information_gain(double entropy_parent, const DataSet &original_data, const vector<vector<size_t>> &children_splits, double total_parent_size)
 {
     double weighted_child_entropy = 0.0;
     for (const auto &child_indices : children_splits)
@@ -147,24 +147,27 @@ double calculate_intrinsic_value(double total_parent_size, const vector<vector<s
     return intrinsic_value;
 }
 
-double information_gain_ratio(double entropy_parent, const DataSet &original_data, const vector<vector<size_t>> &children_splits, double total_parent_size)
+double calculate_information_gain_ratio(double entropy_parent, const DataSet &original_data,
+                                        const vector<vector<size_t>> &children_splits, double total_parent_size)
 {
-    double gain = information_gain(entropy_parent, original_data, children_splits, total_parent_size);
+    double gain = calculate_information_gain(entropy_parent, original_data, children_splits, total_parent_size);
     double intrinsic_value = calculate_intrinsic_value(total_parent_size, children_splits);
-    if (intrinsic_value < numeric_limits<double>::epsilon())
-        return 0.0;
+    // if (intrinsic_value < 1e-9 || total_parent_size == 0)
+    //     return 0.0;
     return gain / intrinsic_value;
 }
 
-double normalized_weighted_information_gain(double entropy_parent, const DataSet &original_data, const vector<vector<size_t>> &children_splits, double total_parent_size)
+double calculate_normalized_weighted_information_gain(double entropy_parent, const DataSet &original_data,
+                                                      const vector<vector<size_t>> &children_splits, double total_parent_size)
 {
-    double gain = information_gain(entropy_parent, original_data, children_splits, total_parent_size);
+    double gain = calculate_information_gain(entropy_parent, original_data, children_splits, total_parent_size);
     double k = (double)(children_splits.size());
     if (k <= 1 || total_parent_size == 0)
         return 0.0;
 
     double term1_denominator = log2(k + 1.0);
-    double term1 = (term1_denominator > numeric_limits<double>::epsilon()) ? gain / term1_denominator : 0.0;
+    // double term1 = (term1_denominator > 1e-9) ? gain / term1_denominator : 0.0;
+    double term1 = gain / term1_denominator;
     double term2 = 1.0 - ((double)(k - 1.0) / total_parent_size);
     return term1 * term2;
 }
@@ -240,16 +243,18 @@ Node *buildTree(const DataSet &original_data, const vector<size_t> &indices, vec
                 vector<size_t> left_indices, right_indices;
                 for (size_t index : indices)
                 {
+                    double target_index;
                     try
                     {
-                        if (stod(original_data.data_points[index].features[feature_index]) <= split_point)
-                            left_indices.push_back(index);
-                        else
-                            right_indices.push_back(index);
+                        target_index = stod(original_data.data_points[index].features[feature_index]);
                     }
                     catch (exception &e)
                     {
                     }
+                    if (target_index <= split_point)
+                        left_indices.push_back(index);
+                    else
+                        right_indices.push_back(index);
                 }
 
                 if (left_indices.empty() || right_indices.empty())
@@ -324,16 +329,18 @@ Node *buildTree(const DataSet &original_data, const vector<size_t> &indices, vec
         vector<size_t> left_indices, right_indices;
         for (size_t index : indices)
         {
+            double target_value;
             try
             {
-                if (stod(original_data.data_points[index].features[best_feature_index]) <= best_split_value)
-                    left_indices.push_back(index);
-                else
-                    right_indices.push_back(index);
+                target_value = stod(original_data.data_points[index].features[best_feature_index]);
             }
             catch (exception &e)
             {
             }
+            if (target_value <= best_split_value)
+                left_indices.push_back(index);
+            else
+                right_indices.push_back(index);
         }
 
         node->children["<="] = buildTree(original_data, left_indices, next_available_feature_indices, max_depth, current_depth + 1, criterion_function);
@@ -377,12 +384,12 @@ string predict(Node *tree, const DataPoint &data_point, const string &default_cl
     {
         try
         {
-            double val = stod(data_point.features[tree->split_feature_index]);
-            const string &branch = (val <= tree->split_value) ? "<=" : ">";
+            double target_value = stod(data_point.features[tree->split_feature_index]);
+            const string &branch = (target_value <= tree->split_value) ? "<=" : ">";
             if (tree->children.count(branch))
                 return predict(tree->children.at(branch), data_point, tree->predicted_class);
         }
-        catch (const std::invalid_argument &ia)
+        catch (const invalid_argument &ia)
         {
             return tree->predicted_class;
         }
@@ -427,32 +434,61 @@ DataSet load_csv(const string &filepath, const string &dataset_name)
         return dataset;
     }
     string line;
+
     if (getline(file, line))
     {
         stringstream ss(line);
         string cell;
-        if (dataset_name == "iris")
-            getline(ss, cell, ',');
+        int col_index = 0;
+
         while (getline(ss, cell, ','))
         {
+            if (dataset_name == "iris" && col_index == 0)
+            {
+                col_index++;
+                continue;
+            }
+            if (dataset_name == "adult" && (col_index == 2 || col_index == 3 || col_index == 7))
+            {
+                col_index++;
+                continue;
+            }
+
             trim(cell);
             dataset.feature_names.push_back(cell);
+            col_index++;
         }
         if (!dataset.feature_names.empty())
+        {
             dataset.feature_names.pop_back();
+        }
     }
+
     while (getline(file, line))
     {
         stringstream ss(line);
         string cell;
-        if (dataset_name == "iris")
-            getline(ss, cell, ',');
         vector<string> row_values;
+        int col_index = 0;
+
         while (getline(ss, cell, ','))
         {
+            if (dataset_name == "iris" && col_index == 0)
+            {
+                col_index++;
+                continue;
+            }
+            else if (dataset_name == "adult" && (col_index == 2 || col_index == 3 || col_index == 7))
+            {
+                col_index++;
+                continue;
+            }
+
             trim(cell);
             row_values.push_back(cell);
+            col_index++;
         }
+
         if (row_values.size() == dataset.feature_names.size() + 1)
         {
             DataPoint dp;
@@ -477,8 +513,22 @@ void shuffle_and_split(const DataSet &original_data, DataSet &train_data, DataSe
     shuffle(shuffled_data.begin(), shuffled_data.end(), rng);
 
     size_t train_size = static_cast<size_t>(shuffled_data.size() * train_ratio);
-    train_data.data_points.assign(shuffled_data.begin(), shuffled_data.begin() + train_size);
-    test_data.data_points.assign(shuffled_data.begin() + train_size, shuffled_data.end());
+    for (size_t i = 0; i < shuffled_data.size(); ++i)
+    {
+        if (i < train_size)
+        {
+            train_data.data_points.push_back(shuffled_data[i]);
+        }
+        else
+        {
+            test_data.data_points.push_back(shuffled_data[i]);
+        }
+    }
+    if (train_data.data_points.empty() || test_data.data_points.empty())
+    {
+        cout << "Not enough data to split into train and test sets." << endl;
+        return;
+    }
 }
 
 int main(int argc, char *argv[])
@@ -493,16 +543,16 @@ int main(int argc, char *argv[])
 
     double (*criterion_function)(double, const DataSet &, const vector<vector<size_t>> &, double) = nullptr;
     if (criterion_str == "IG")
-        criterion_function = information_gain;
+        criterion_function = calculate_information_gain;
     else if (criterion_str == "IGR")
-        criterion_function = information_gain_ratio;
+        criterion_function = calculate_information_gain_ratio;
     else if (criterion_str == "NWIG")
-        criterion_function = normalized_weighted_information_gain;
+        criterion_function = calculate_normalized_weighted_information_gain;
     else
     {
         cout << "Invalid criterion. Defaulting to IG." << endl;
         criterion_str = "IG";
-        criterion_function = information_gain;
+        criterion_function = calculate_information_gain;
     }
 
     numerical_feature_flags["adult"] = {true, false, true, false, true, false, false, false, false, false, true, true, true, false};
@@ -510,6 +560,9 @@ int main(int argc, char *argv[])
 
     cout << "Loading datasets..." << endl;
     DataSet iris_original_data = load_csv("Iris.csv", "iris");
+    // age, workclass, finalweight, education, education_num, marital_status, occupation, relationship,
+    // race, sex, capital_gain, capital_loss, hours_per_week, native_country, income
+
     DataSet adult_original_data = load_csv("adult.data", "adult");
     cout << "Datasets loaded." << endl;
 
@@ -530,7 +583,7 @@ int main(int argc, char *argv[])
         int total_depth = 0;
         const int num_runs = 20;
 
-        for (int i = 0; i < num_runs; ++i)
+        for (int i = 0; i < num_runs; i++)
         {
             DataSet train_data, test_data;
             shuffle_and_split(original_data, train_data, test_data, 0.8, rng);

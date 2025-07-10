@@ -1,0 +1,103 @@
+Running tests...
+Selected Criterion: IG, Max Depth: 2
+Processing dataset: iris
+Average Accuracy over 20 runs: 85.6667%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 52.25
+    Average Depth: 2.1
+Processing dataset: adult
+Average Accuracy over 20 runs: 84.7935%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 819.75
+    Average Depth: 3
+Selected Criterion: IGR, Max Depth: 2
+Processing dataset: iris
+Average Accuracy over 20 runs: 91.1667%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 40.35
+    Average Depth: 2.25
+Processing dataset: adult
+Average Accuracy over 20 runs: 83.0677%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 273.95
+    Average Depth: 3
+Selected Criterion: NWIG, Max Depth: 2
+Processing dataset: iris
+Average Accuracy over 20 runs: 93%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 43
+    Average Depth: 2.75
+Processing dataset: adult
+Average Accuracy over 20 runs: 84.6553%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 659.65
+    Average Depth: 3
+Selected Criterion: IG, Max Depth: 3
+Processing dataset: iris
+Average Accuracy over 20 runs: 86%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 52.9
+    Average Depth: 2.1
+Processing dataset: adult
+Average Accuracy over 20 runs: 84.8234%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 2234.1
+    Average Depth: 4
+Selected Criterion: IGR, Max Depth: 3
+Processing dataset: iris
+Average Accuracy over 20 runs: 91.1667%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 42.85
+    Average Depth: 2.35
+Processing dataset: adult
+Average Accuracy over 20 runs: 86.0863%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 413.1
+    Average Depth: 4
+Selected Criterion: NWIG, Max Depth: 3
+Processing dataset: iris
+Average Accuracy over 20 runs: 94.1667%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 43
+    Average Depth: 2.75
+Processing dataset: adult
+Average Accuracy over 20 runs: 84.7989%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 1470.4
+    Average Depth: 4
+Selected Criterion: IG, Max Depth: 4
+Processing dataset: iris
+Average Accuracy over 20 runs: 86%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 53.5
+    Average Depth: 2.1
+Processing dataset: adult
+Average Accuracy over 20 runs: 84.283%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 4190.35
+    Average Depth: 5
+Selected Criterion: IGR, Max Depth: 4
+Processing dataset: iris
+Average Accuracy over 20 runs: 92.6667%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 41.35
+    Average Depth: 2.4
+Processing dataset: adult
+Average Accuracy over 20 runs: 85.9143%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 1197.65
+    Average Depth: 5
+Selected Criterion: NWIG, Max Depth: 4
+Processing dataset: iris
+Average Accuracy over 20 runs: 93.3333%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 43.95
+    Average Depth: 2.65
+Processing dataset: adult
+Average Accuracy over 20 runs: 84.6323%
+  (Unpruned Tree Mean Stats over 20 runs):
+    Average Nodes: 3094.15
+    Average Depth: 5
+Tests finished.
+
+Time taken 1 min 30 secs
