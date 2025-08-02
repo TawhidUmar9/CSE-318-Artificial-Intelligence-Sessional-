@@ -531,6 +531,86 @@ void shuffle_and_split(const DataSet &original_data, DataSet &train_data, DataSe
     }
 }
 
+void online(const DataSet &original_data, int T, int max_depth,
+            double (*criterion_function)(double, const DataSet &, const vector<vector<size_t>> &, double),
+            mt19937 &rng)
+{
+    int correct = 0;
+    size_t N = original_data.data_points.size();
+
+    // --- Build Forest ---
+    vector<Node *> dec_trees;
+    uniform_int_distribution<size_t> dist(0, N - 1);
+    vector<int> all_feature_indices(original_data.feature_names.size());
+    iota(all_feature_indices.begin(), all_feature_indices.end(), 0);
+
+    for (int i = 0; i < T; i++)
+    {
+        // CHANGED: This now performs correct bootstrap sampling (with replacement)
+        // instead of just shuffling.
+        DataSet bootstrap_data;
+        bootstrap_data.feature_names = original_data.feature_names;
+        for (int j = 0; j < N; j++)
+        {
+            bootstrap_data.data_points.push_back(original_data.data_points[dist(rng)]);
+        }
+
+        vector<size_t> train_indices(bootstrap_data.data_points.size());
+        iota(train_indices.begin(), train_indices.end(), 0);
+
+        dec_trees.push_back(buildTree(bootstrap_data, train_indices, all_feature_indices, max_depth, 0, criterion_function));
+    }
+    // --- Prepare Test Data ---
+    // CHANGED: This now creates a truly random test set
+    vector<DataPoint> test_data;
+    vector<size_t> shuffled_indices(N);
+    iota(shuffled_indices.begin(), shuffled_indices.end(), 0);
+    shuffle(shuffled_indices.begin(), shuffled_indices.end(), rng);
+
+    size_t test_size = N / 4;
+    for (size_t i = 0; i < test_size; i++)
+    {
+        test_data.push_back(original_data.data_points[shuffled_indices[i]]);
+    }
+
+    // --- Evaluate with Majority Voting ---
+    string default_class = get_majority_class(original_data, shuffled_indices); // A reasonable default
+
+    for (const auto &data_point : test_data)
+    {
+        // ADDED: This block performs the required majority voting for each test point
+        unordered_map<string, int> votes;
+        for (Node *tree : dec_trees)
+        {
+            string prediction = predict(tree, data_point, default_class);
+            votes[prediction]++;
+        }
+
+        string final_prediction;
+        int max_votes = -1;
+        for (const auto &vote : votes)
+        {
+            if (vote.second > max_votes)
+            {
+                max_votes = vote.second;
+                final_prediction = vote.first;
+            }
+        }
+
+        if (final_prediction == data_point.label)
+        {
+            correct++;
+        }
+    }
+
+    cout << "Accuracy: " << (double)correct / test_size * 100.0 << "%" << endl;
+
+    for (Node *tree : dec_trees)
+    {
+        delete tree;
+    }
+}
+
 int main(int argc, char *argv[])
 {
     if (argc != 3)
